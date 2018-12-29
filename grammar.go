@@ -19,6 +19,7 @@ type SqlGrammar struct {
 func (g *SqlGrammar) Compile(s *QueryBuilder) string {
 	sql := g.compileColumns(s) +
 		g.compileFrom(s) +
+		g.compileOrders(s) +
 		g.compileLimit(s) +
 		g.compileOffset(s)
 
@@ -38,6 +39,19 @@ func (g *SqlGrammar) compileColumns(s *QueryBuilder) string {
 
 func (g *SqlGrammar) compileFrom(s *QueryBuilder) string {
 	return fmt.Sprintf("from `%s` ", s.from)
+}
+
+func (g *SqlGrammar) compileOrders(s *QueryBuilder) string {
+	if len(s.orders) < 1 {
+		return ""
+	}
+	var orders []string
+
+	for _, v := range s.orders {
+		orders = append(orders, fmt.Sprintf("%s %s", v[0], v[1]))
+	}
+
+	return fmt.Sprintf("order by %s ", strings.Join(orders, ", "))
 }
 
 func (g *SqlGrammar) compileLimit(s *QueryBuilder) string {

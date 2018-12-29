@@ -36,6 +36,8 @@ type QueryBuilder struct {
 	from string
 	wheres map[string][3]string
 	bindings map[string][]Value
+	// Not use map
+	orders [][2]string
 	limit int
 	offset int
 }
@@ -80,6 +82,19 @@ func (q *QueryBuilder) Get(columns... string) *Collection {
 	// TODO: dispatch sql event
 	fmt.Println(sql)
 	return q.GetRaw(sql, q.FlatBindings()...)
+}
+
+func (q *QueryBuilder) Sort(by string, direction string) *QueryBuilder {
+	q.orders = append(q.orders, [2]string{by, direction})
+
+	return q
+}
+func (q *QueryBuilder) SortDesc(by string) *QueryBuilder {
+	return q.Sort(by, "desc")
+}
+
+func (q *QueryBuilder) SortAsc(by string) *QueryBuilder {
+	return q.Sort(by, "asc")
 }
 
 func (q *QueryBuilder) First(columns... string) Item {
@@ -133,6 +148,7 @@ func NewValue(v interface{}) Value {
 func NewBuilder(c *Connection) *QueryBuilder{
 	q := new(QueryBuilder)
 	q.connection = c
+	q.orders = [][2]string{}
 	return q
 }
 
