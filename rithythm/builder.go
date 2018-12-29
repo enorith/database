@@ -1,11 +1,15 @@
 package rithythm
 
-import "github.com/CaoJiayuan/rith/database"
+import (
+	"github.com/CaoJiayuan/rithdb"
+)
 
 type ModelResolver func(model DataModel) interface{}
 
+var config rithdb.Config
+
 type RithythmBuilder struct {
-	*database.QueryBuilder
+	*rithdb.QueryBuilder
 	model DataModel
 }
 
@@ -18,4 +22,8 @@ func (r *RithythmBuilder) GetRaw(query string, bindings... interface{}) *Rithyth
 	c := r.QueryBuilder.GetRaw(query, bindings...)
 
 	return CollectFromBase(c, r.model)
+}
+
+func Config(c rithdb.Config)  {
+	config = c
 }

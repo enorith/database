@@ -1,16 +1,16 @@
 package rithythm
 
 import (
-	"github.com/CaoJiayuan/rith/database"
 	"github.com/CaoJiayuan/goutilities/define"
+	"github.com/CaoJiayuan/rithdb"
 )
 
 type RithythmCollection struct {
-	*database.Collection
+	*rithdb.Collection
 	model DataModel
 }
 
-func CollectFromBase(c *database.Collection, model DataModel) *RithythmCollection {
+func CollectFromBase(c *rithdb.Collection, model DataModel) *RithythmCollection {
 	return &RithythmCollection{
 		c,
 		model,

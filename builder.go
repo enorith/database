@@ -1,5 +1,9 @@
 package rithdb
 
+import (
+	"fmt"
+	"strings"
+)
 
 type SqlAble interface {
 	ToSql() string
@@ -67,10 +71,18 @@ func (q *QueryBuilder) GetRaw(query string, bindings... interface{}) *Collection
 	return Collect(rows)
 }
 
-func (q *QueryBuilder) Get(columns... []string)  {
-	
-}
+func (q *QueryBuilder) Get(columns... string) *Collection {
+	col := strings.Join(columns, ",")
 
+	if len(col) < 1 {
+		col = "*"
+	}
+
+	query := fmt.Sprintf("select %s from %s", col, q.from)
+
+	fmt.Println(query)
+	return q.GetRaw(query)
+}
 
 func (q *QueryBuilder) ToSql() string {
 	panic("implement me")

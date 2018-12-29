@@ -41,6 +41,6 @@ func (m *Model) marshal(data define.Map) {
 	m.originals = data
 }
 
-func Hold(m DataModel) ModelHolder {
-	return ModelHolder{m}
+func Hold(m DataModel) *ModelHolder {
+	return &ModelHolder{m}
 }
