@@ -2,6 +2,7 @@ package rithythm
 
 import (
 	"github.com/CaoJiayuan/goutilities/define"
+	"encoding/json"
 )
 
 type DataModel interface {
@@ -15,6 +16,10 @@ type DataModel interface {
 
 type Model struct {
 	originals define.Map
+}
+
+func (m *Model) MarshalJSON() ([]byte, error) {
+	return json.Marshal(m.originals)
 }
 
 func (m *Model) GetTable() string {

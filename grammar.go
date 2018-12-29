@@ -14,16 +14,16 @@ type Grammar interface {
 // SqlGrammar is sql compiler
 // compile QueryBuilder to sql string
 type SqlGrammar struct {
-
 }
 
 func (g *SqlGrammar) Compile(s *QueryBuilder) string {
 	sql := g.compileColumns(s) +
-		g.compileFrom(s)
+		g.compileFrom(s) +
+		g.compileLimit(s) +
+		g.compileOffset(s)
 
 	return sql
 }
-
 
 func (g *SqlGrammar) compileColumns(s *QueryBuilder) string {
 	var col string
@@ -41,11 +41,17 @@ func (g *SqlGrammar) compileFrom(s *QueryBuilder) string {
 }
 
 func (g *SqlGrammar) compileLimit(s *QueryBuilder) string {
-	return fmt.Sprintf("limit `%d` ", s.limit)
+	if s.limit < 1 {
+		return ""
+	}
+	return fmt.Sprintf("limit %d", s.limit)
 }
 
 func (g *SqlGrammar) compileOffset(s *QueryBuilder) string {
-	return fmt.Sprintf("offset `%d` ", s.offset)
+	if s.offset < 1 || s.limit < 1 {
+		return ""
+	}
+	return fmt.Sprintf("offset %d", s.offset)
 }
 
 type MysqlGrammar struct {
@@ -54,7 +60,7 @@ type MysqlGrammar struct {
 
 func RegisterGrammar(name string, g Grammar) {
 	if garmmars == nil {
-		 garmmars = make(map[string]Grammar)
+		garmmars = make(map[string]Grammar)
 	}
 	garmmars[name] = g
 }

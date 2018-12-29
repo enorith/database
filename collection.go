@@ -8,8 +8,8 @@ import (
 )
 
 type Item interface{}
-type ItemResolver func(item Item) interface{}
-type ItemFilter func(item Item) bool
+type ItemResolver func(item Item, key int) interface{}
+type ItemFilter func(item Item, key int) bool
 
 type Collection struct {
 	items []Item
@@ -41,8 +41,8 @@ func (c *Collection) First() Item {
 
 func (c *Collection) Map(re ItemResolver) *Collection {
 	var result []Item
-	for v := range c.items {
-		result = append(result, re(v))
+	for k, v := range c.items {
+		result = append(result, re(v, k))
 	}
 
 	return Collect(result)
@@ -50,8 +50,8 @@ func (c *Collection) Map(re ItemResolver) *Collection {
 
 func (c *Collection) Filter(filter ItemFilter) *Collection {
 	var result []Item
-	for _, v := range c.items {
-		if filter(v)  {
+	for k, v := range c.items {
+		if filter(v, k)  {
 			result = append(result, v)
 		}
 	}
