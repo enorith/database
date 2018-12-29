@@ -1,0 +1,1 @@
+# Database component for [Rith](https://github.com/CaoJiayuan/rith)
