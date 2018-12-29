@@ -1,9 +1,14 @@
 package rithdb
 
+import (
+	"strings"
+	"fmt"
+)
+
 var garmmars map[string]Grammar
 
 type Grammar interface {
-	compile(s QueryBuilder) string
+	Compile(s *QueryBuilder) string
 }
 
 // SqlGrammar is sql compiler
@@ -12,15 +17,42 @@ type SqlGrammar struct {
 
 }
 
-func (g *SqlGrammar) compile(s QueryBuilder) string {
-	panic("implement me")
+func (g *SqlGrammar) Compile(s *QueryBuilder) string {
+	sql := g.compileColumns(s) +
+		g.compileFrom(s)
+
+	return sql
+}
+
+
+func (g *SqlGrammar) compileColumns(s *QueryBuilder) string {
+	var col string
+	if len(s.columns) < 1 {
+		col = "* "
+	} else {
+		col = strings.Join(s.columns, ", ") + " "
+	}
+
+	return "select " + col
+}
+
+func (g *SqlGrammar) compileFrom(s *QueryBuilder) string {
+	return fmt.Sprintf("from `%s` ", s.from)
+}
+
+func (g *SqlGrammar) compileLimit(s *QueryBuilder) string {
+	return fmt.Sprintf("limit `%d` ", s.limit)
+}
+
+func (g *SqlGrammar) compileOffset(s *QueryBuilder) string {
+	return fmt.Sprintf("offset `%d` ", s.offset)
 }
 
 type MysqlGrammar struct {
 	SqlGrammar
 }
 
-func RegisterGarmmar(name string, g Grammar) {
+func RegisterGrammar(name string, g Grammar) {
 	if garmmars == nil {
 		 garmmars = make(map[string]Grammar)
 	}

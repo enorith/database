@@ -1,9 +1,6 @@
 package rithdb
 
-import (
-	"fmt"
-	"strings"
-)
+import "fmt"
 
 type SqlAble interface {
 	ToSql() string
@@ -39,6 +36,8 @@ type QueryBuilder struct {
 	from string
 	wheres map[string][3]string
 	bindings map[string][]Value
+	limit int
+	offset int
 }
 
 func (q *QueryBuilder) Where(column string, operator string, value interface{}, and bool) *QueryBuilder {
@@ -72,21 +71,50 @@ func (q *QueryBuilder) GetRaw(query string, bindings... interface{}) *Collection
 }
 
 func (q *QueryBuilder) Get(columns... string) *Collection {
-	col := strings.Join(columns, ",")
-
-	if len(col) < 1 {
-		col = "*"
+	if len(q.columns) < 1 {
+		q.columns = columns
 	}
 
-	query := fmt.Sprintf("select %s from %s", col, q.from)
+	sql := q.ToSql()
+	fmt.Println(sql)
+	return q.GetRaw(sql, q.FlatBindings()...)
+}
 
-	fmt.Println(query)
-	return q.GetRaw(query)
+func (q *QueryBuilder) FlatBindings() []interface{} {
+	var bs []interface{}
+
+	for _, v := range q.bindings {
+		for _, b := range v {
+			bs = append(bs, b.v)
+		}
+	}
+
+	return bs
+}
+
+func (q *QueryBuilder) Select(columns... string) *QueryBuilder {
+	q.columns = columns
+	return q
+}
+
+func (q *QueryBuilder) Take(limit int) *QueryBuilder {
+	q.limit = limit
+	return q
+}
+
+func (q *QueryBuilder) Offset(offset int) *QueryBuilder {
+	q.offset = offset
+	return q
 }
 
 func (q *QueryBuilder) ToSql() string {
-	panic("implement me")
+	return q.connection.grammar.Compile(q)
 }
+
+func (q *QueryBuilder) GetColumns() []string {
+	return q.columns
+}
+
 
 func (q *QueryBuilder) GetConnection() *Connection {
 	return q.connection

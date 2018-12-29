@@ -19,7 +19,7 @@ type Connection struct {
 	db         *sql.DB
 	connection string
 	config     Config
-	grammar Grammar
+	grammar    Grammar
 }
 
 func (c *Connection) GetConnection() string {
@@ -38,7 +38,7 @@ func (c *Connection) Close() error {
 	return nil
 }
 
-func (c *Connection) Clone() *Connection  {
+func (c *Connection) Clone() *Connection {
 	return NewConnection(c.connection, c.config)
 }
 
@@ -131,6 +131,10 @@ func NewConnection(conn string, config Config) *Connection {
 		connection: conn,
 		config:     config,
 	}
+	if config, exists := config.Connections[conn]; exists {
+		connection.setGrammar(config.Driver)
+	}
+
 	Conns.Push(connection)
 	return connection
 }
