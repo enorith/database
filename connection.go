@@ -10,6 +10,7 @@ type DriverRegister = func(config ConnectionConfig) (*sql.DB, error)
 var driverRegister map[string]DriverRegister
 
 var Conns Connections
+var openeds = map[string]*sql.DB{}
 
 type ConnectionInterface interface {
 	GetConnection() string
@@ -79,10 +80,17 @@ func (c *Connection) GetDB(connection ...string) (*sql.DB, error) {
 
 	c.Using(using)
 
+	if opened, exits := openeds[using]; exits {
+		c.db = opened
+		return opened, nil
+	}
+
 	config := c.resolveConnectionConfig()
+
 	c.setGrammar(config.Driver)
 	register := driverRegister[config.Driver]
 	db, err := register(config)
+	openeds[using] = db
 	c.db = db
 	return db, err
 }
