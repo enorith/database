@@ -36,7 +36,7 @@ type QueryBuilder struct {
 	from string
 	wheres map[string][3]string
 	bindings map[string][]Value
-	// Not use map
+	// Do not use map
 	orders [][2]string
 	limit int
 	offset int
