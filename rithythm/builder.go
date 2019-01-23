@@ -32,21 +32,22 @@ func (r *RithythmBuilder) Offset(offset int) *RithythmBuilder {
 	return r
 }
 
+func (r *RithythmBuilder) ForPage(page int, perPage int) *RithythmBuilder {
+	r.QueryBuilder.ForPage(page, perPage)
+	return r
+}
 func (r *RithythmBuilder) Get(columns... string) *RithythmCollection {
 	c := r.QueryBuilder.Get(columns...)
-
 	return CollectFromBase(c, r.model)
 }
 
 func (r *RithythmBuilder) GetRaw(query string, bindings... interface{}) *RithythmCollection {
 	c := r.QueryBuilder.GetRaw(query, bindings...)
-
 	return CollectFromBase(c, r.model)
 }
 
 func (r *RithythmBuilder) First(columns... string) DataModel {
 	first := r.Take(1).Get(columns...).First()
-
 	return ItemToModel(r.model, first)
 }
 

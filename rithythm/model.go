@@ -1,8 +1,8 @@
 package rithythm
 
 import (
-	"github.com/CaoJiayuan/goutilities/define"
 	"encoding/json"
+	"github.com/CaoJiayuan/goutilities/define"
 )
 
 type DataModel interface {

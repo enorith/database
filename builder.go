@@ -128,6 +128,10 @@ func (q *QueryBuilder) Offset(offset int) *QueryBuilder {
 	return q
 }
 
+func (q *QueryBuilder) ForPage(page int, perPage int) *QueryBuilder {
+	return q.Offset((page - 1) * perPage).Take(perPage)
+}
+
 func (q *QueryBuilder) ToSql() string {
 	return q.connection.grammar.Compile(q)
 }

@@ -1,8 +1,8 @@
 package rithdb
 
 import (
-	"encoding/json"
 	"database/sql"
+	"encoding/json"
 	"github.com/CaoJiayuan/goutilities/str"
 	"strconv"
 )
@@ -86,7 +86,7 @@ func convertItems(items interface{}) []Item {
 		defer t.Close()
 		cols, _ := t.Columns()
 		types, _ := t.ColumnTypes()
-		var data []Item
+		data := []Item{}
 		item := make([]interface{}, len(cols))
 		values := make([][]byte, len(cols))
 

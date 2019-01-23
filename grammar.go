@@ -1,8 +1,8 @@
 package rithdb
 
 import (
-	"strings"
 	"fmt"
+	"strings"
 )
 
 var garmmars map[string]Grammar
@@ -58,14 +58,14 @@ func (g *SqlGrammar) compileLimit(s *QueryBuilder) string {
 	if s.limit < 1 {
 		return ""
 	}
-	return fmt.Sprintf("limit %d", s.limit)
+	return fmt.Sprintf("limit %d ", s.limit)
 }
 
 func (g *SqlGrammar) compileOffset(s *QueryBuilder) string {
 	if s.offset < 1 || s.limit < 1 {
 		return ""
 	}
-	return fmt.Sprintf("offset %d", s.offset)
+	return fmt.Sprintf("offset %d ", s.offset)
 }
 
 type MysqlGrammar struct {
