@@ -139,7 +139,8 @@ func NewConnection(conn string, config Config) *Connection {
 		connection: conn,
 		config:     config,
 	}
-	if config, exists := config.Connections[conn]; exists {
+	connections := config.Connections
+	if config, exists := connections[conn]; exists {
 		connection.setGrammar(config.Driver)
 	}
 

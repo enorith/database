@@ -86,7 +86,7 @@ func convertItems(items interface{}) []Item {
 		defer t.Close()
 		cols, _ := t.Columns()
 		types, _ := t.ColumnTypes()
-		data := []Item{}
+		var data []Item
 		item := make([]interface{}, len(cols))
 		values := make([][]byte, len(cols))
 
@@ -98,15 +98,15 @@ func convertItems(items interface{}) []Item {
 			d := make(map[string]interface{})
 
 			for k, v := range cols {
-				t := types[k].DatabaseTypeName()
+				columnType := types[k].DatabaseTypeName()
 
 				bytesData := values[k]
-				if str.Contains(t, "INT") {
+				if str.Contains(columnType, "INT") {
 					integer,_ := strconv.Atoi(string(bytesData))
 					d[v] = integer
-				} else if str.Contains(t, "CHAR", "TEXT", "TIMESTAMP") {
+				} else if str.Contains(columnType, "CHAR", "TEXT", "TIMESTAMP", "DATE") {
 					d[v] = string(bytesData)
-				} else if str.Contains(t, "DECIMAL", "FLOAT") {
+				} else if str.Contains(columnType, "DECIMAL", "FLOAT") {
 					f,_ := strconv.ParseFloat(string(bytesData), 64)
 					d[v] = f
 				} else  {
