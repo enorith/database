@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-var garmmars map[string]Grammar
+var grammars map[string]Grammar
 
 type Grammar interface {
 	Compile(s *QueryBuilder) string
@@ -73,8 +73,8 @@ type MysqlGrammar struct {
 }
 
 func RegisterGrammar(name string, g Grammar) {
-	if garmmars == nil {
-		garmmars = make(map[string]Grammar)
+	if grammars == nil {
+		grammars = make(map[string]Grammar)
 	}
-	garmmars[name] = g
+	grammars[name] = g
 }

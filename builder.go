@@ -1,7 +1,5 @@
 package rithdb
 
-import "fmt"
-
 type SqlAble interface {
 	ToSql() string
 }
@@ -80,7 +78,6 @@ func (q *QueryBuilder) Get(columns... string) *Collection {
 	sql := q.ToSql()
 
 	// TODO: dispatch sql event
-	fmt.Println(sql)
 	return q.GetRaw(sql, q.FlatBindings()...)
 }
 
