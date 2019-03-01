@@ -3,6 +3,7 @@ package rithdb
 import (
 	"database/sql"
 	env "github.com/CaoJiayuan/rithenv"
+	"github.com/CaoJiayuan/rithevent"
 )
 
 type DriverRegister = func(config ConnectionConfig) (*sql.DB, error)
@@ -11,6 +12,18 @@ var driverRegister map[string]DriverRegister
 
 var Conns Connections
 var opened = map[string]*sql.DB{}
+
+type DBEvent struct {
+	rithevent.Event
+	Sql string
+	Type string
+	Bindings []interface{}
+	Err error
+}
+
+func (e *DBEvent) GetEventName() string {
+	return "rith::db"
+}
 
 type ConnectionInterface interface {
 	GetConnection() string
@@ -50,6 +63,12 @@ func (c *Connection) Select(sql string, bindings ...interface{}) (*sql.Rows, err
 	}
 
 	rows, queryErr := db.Query(sql, bindings...)
+	rithevent.BUS.Dispatch(&DBEvent{
+		Sql: sql,
+		Type:"select",
+		Err: queryErr,
+		Bindings: bindings,
+	})
 
 	return rows, queryErr
 }

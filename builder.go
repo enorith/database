@@ -32,8 +32,9 @@ type QueryBuilder struct {
 	connection *Connection
 	columns []string
 	from string
-	wheres map[string][3]string
-	bindings map[string][]Value
+
+	wheres [][4]string
+	bindings map[string][]interface{}
 	// Do not use map
 	orders [][2]string
 	limit int
@@ -47,12 +48,20 @@ func (q *QueryBuilder) Where(column string, operator string, value interface{}, 
 	} else {
 		b = "or"
 	}
-	q.wheres[column] = [3]string{"basic", operator, b}
-	q.bindings["where"] = append(q.bindings["where"], Value{value})
+	q.wheres = append(q.wheres, [4]string{column, "basic", operator, b})
+	q.bindings["where"] = append(q.bindings["where"], value)
 	
 	return q
 }
 
+
+func (q *QueryBuilder) AndWhere(column string, operator string, value interface{}) *QueryBuilder {
+	return q.Where(column, operator, value, true)
+}
+
+func (q *QueryBuilder) OrWhere(column string, operator string, value interface{}) *QueryBuilder {
+	return q.Where(column, operator, value, false)
+}
 
 func (q *QueryBuilder) From(table string) *QueryBuilder {
 
@@ -77,7 +86,6 @@ func (q *QueryBuilder) Get(columns... string) *Collection {
 
 	sql := q.ToSql()
 
-	// TODO: dispatch sql event
 	return q.GetRaw(sql, q.FlatBindings()...)
 }
 
@@ -103,7 +111,7 @@ func (q *QueryBuilder) FlatBindings() []interface{} {
 
 	for _, v := range q.bindings {
 		for _, b := range v {
-			bs = append(bs, b.v)
+			bs = append(bs, b)
 		}
 	}
 
@@ -150,6 +158,7 @@ func NewBuilder(c *Connection) *QueryBuilder{
 	q := new(QueryBuilder)
 	q.connection = c
 	q.orders = [][2]string{}
+	q.bindings = map[string][]interface{}{}
 	return q
 }
 
