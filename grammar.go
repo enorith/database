@@ -43,7 +43,7 @@ func (g *SqlGrammar) compileFrom(s *QueryBuilder) string {
 }
 
 func (g *SqlGrammar) compileWheres(s *QueryBuilder) string {
-	where := "where "
+	where := ""
 
 	for k, w := range s.wheres {
 		var appendStr string
@@ -53,6 +53,9 @@ func (g *SqlGrammar) compileWheres(s *QueryBuilder) string {
 		where += fmt.Sprintf("%s%s %s ? ", appendStr, w[0], w[2])
 	}
 
+	if len(where) > 0 {
+		where = "where " + where
+	}
 	return where
 }
 
