@@ -51,7 +51,7 @@ func (m *Model) GetString(field string) (string, error) {
 		return s, nil
 	}
 
-	return "", errors.New(fmt.Sprintf("try to get string value from field: %s", field))
+	return "", errors.New(fmt.Sprintf("try to get string value from field [%s]", field))
 }
 
 func (m *Model) GetInt(field string) (int, error) {
@@ -59,7 +59,7 @@ func (m *Model) GetInt(field string) (int, error) {
 		return i, nil
 	}
 
-	return 0, errors.New(fmt.Sprintf("try to get int value from field: %s", field))
+	return 0, errors.New(fmt.Sprintf("try to get int value from field [%s]", field))
 }
 
 func (m *Model) marshal(data define.Map) {

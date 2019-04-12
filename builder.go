@@ -102,7 +102,7 @@ func (q *QueryBuilder) SortAsc(by string) *QueryBuilder {
 	return q.Sort(by, "asc")
 }
 
-func (q *QueryBuilder) First(columns... string) Item {
+func (q *QueryBuilder) First(columns... string) *CollectionItem {
 	return q.Take(1).Get().First()
 }
 

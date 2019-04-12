@@ -27,7 +27,7 @@ func (c *RithythmCollection) GetItem(key int) DataModel {
 func (c *RithythmCollection) Map(re ModelResolver) *rithdb.Collection {
 	var result []rithdb.Item
 	for k, v := range c.GetItems() {
-		result = append(result, re(ItemToModel(c.model, v), k))
+		result = append(result, re(ItemToModel(c.model, rithdb.NewCollectionItem(v)), k))
 	}
 
 	return rithdb.Collect(result)
@@ -36,7 +36,7 @@ func (c *RithythmCollection) Map(re ModelResolver) *rithdb.Collection {
 func (c *RithythmCollection) Filter(re ModelFilter) *RithythmCollection {
 	var result []rithdb.Item
 	for k, v := range c.GetItems() {
-		if re(ItemToModel(c.model, v), k) {
+		if re(ItemToModel(c.model, rithdb.NewCollectionItem(v)), k) {
 			result = append(result, v)
 		}
 	}
@@ -44,11 +44,11 @@ func (c *RithythmCollection) Filter(re ModelFilter) *RithythmCollection {
 	return CollectFromBase(rithdb.Collect(result), c.model)
 }
 
-func ItemToModel(model DataModel, item rithdb.Item) DataModel {
+func ItemToModel(model DataModel, item *rithdb.CollectionItem) DataModel {
 	if item == nil {
 		return nil
 	}
-	if data, ok := item.(map[string]interface{}); ok {
+	if data, ok := item.Original().(map[string]interface{}); ok {
 		m := model.Clone()
 		m.marshal(data)
 		return m
