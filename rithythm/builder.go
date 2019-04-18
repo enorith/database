@@ -50,7 +50,8 @@ func (r *RithythmBuilder) First(columns... string) DataModel {
 	first := r.Take(1).Get(columns...).First()
 	return ItemToModel(r.model, first)
 }
-func (r *RithythmBuilder) Find(id int, columns... string) DataModel {
+
+func (r *RithythmBuilder) Find(id int64, columns... string) DataModel {
 	first := r.Where(r.model.GetKeyName(), "=", id, true).Get(columns...).First()
 	return ItemToModel(r.model, first)
 }

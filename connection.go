@@ -73,6 +73,35 @@ func (c *Connection) Select(sql string, bindings ...interface{}) (*sql.Rows, err
 	return rows, queryErr
 }
 
+func (c *Connection) Exec(sql string, bindings ...interface{}) (sql.Result, error) {
+	db, err := c.GetDB()
+	if err != nil {
+		return nil, err
+	}
+
+	result, queryErr := db.Exec(sql, bindings...)
+
+	ev.BUS.Dispatch(&DBEvent{
+		Sql: sql,
+		Type: "exec",
+		Err: queryErr,
+		Bindings: bindings,
+	})
+
+	return result, queryErr
+}
+
+func (c *Connection) InsertGetId(sql string, bindings ...interface{}) (int64, error) {
+	result, execErr := c.Exec(sql, bindings)
+	if execErr != nil {
+		return 0, execErr
+	}
+
+	id,err := result.LastInsertId()
+
+	return id, err
+}
+
 // Using known connection
 // well close current connection before use new connection
 func (c *Connection) Using(connection string) *Connection {

@@ -16,6 +16,8 @@ type DataModel interface {
     GetValue(field string) interface{}
 	GetString(field string) (string, error)
 	GetInt(field string) (int, error)
+	GetInt64(field string) (int64, error)
+	GetInt32(field string) (int32, error)
 }
 
 type Model struct {
@@ -60,6 +62,22 @@ func (m *Model) GetInt(field string) (int, error) {
 	}
 
 	return 0, errors.New(fmt.Sprintf("try to get int value from field [%s]", field))
+}
+
+func (m *Model) GetInt64(field string) (int64, error) {
+	if i, ok := m.GetValue(field).(int64); ok {
+		return i, nil
+	}
+
+	return 0, errors.New(fmt.Sprintf("try to get int64 value from field [%s]", field))
+}
+
+func (m *Model) GetInt32(field string) (int32, error) {
+	if i, ok := m.GetValue(field).(int32); ok {
+		return i, nil
+	}
+
+	return 0, errors.New(fmt.Sprintf("try to get int32 value from field [%s]", field))
 }
 
 func (m *Model) marshal(data define.Map) {
