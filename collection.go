@@ -178,7 +178,6 @@ func convertItems(items interface{}) []Item {
 	if t, ok := items.(*sql.Rows); ok {
 		defer t.Close()
 		cols, _ := t.Columns()
-		types, _ := t.ColumnTypes()
 		var data []Item
 		item := make([]interface{}, len(cols))
 		values := make([][]byte, len(cols))
@@ -186,27 +185,31 @@ func convertItems(items interface{}) []Item {
 		for k := range values {
 			item[k] = &values[k]
 		}
+
+		types, _ := t.ColumnTypes()
 		for t.Next() {
 			t.Scan(item...)
-			d := make(map[string]interface{})
+			dataItem := make(map[string]interface{})
 
-			for k, v := range cols {
-				columnType := types[k].DatabaseTypeName()
+			for index, field := range cols {
+				columnType := types[index].DatabaseTypeName()
 
-				bytesData := values[k]
-				if str.Contains(columnType, "INT") {
-					integer, _ := strconv.Atoi(string(bytesData))
-					d[v] = integer
-				} else if str.Contains(columnType, "CHAR", "TEXT", "TIMESTAMP", "DATE") {
-					d[v] = string(bytesData)
-				} else if str.Contains(columnType, "DECIMAL", "FLOAT") {
-					f, _ := strconv.ParseFloat(string(bytesData), 64)
-					d[v] = f
-				} else {
-					d[v] = bytesData
-				}
+				bytesData := values[index]
+				//
+				//if str.Contains(columnType, "INT") {
+				//	integer, _ := strconv.Atoi(string(bytesData))
+				//	dataItem[field] = integer
+				//} else if str.Contains(columnType, "CHAR", "TEXT", "TIMESTAMP", "DATE") {
+				//	dataItem[field] = string(bytesData)
+				//} else if str.Contains(columnType, "DECIMAL", "FLOAT") {
+				//	f, _ := strconv.ParseFloat(string(bytesData), 64)
+				//	dataItem[field] = f
+				//} else {
+				//	dataItem[field] = bytesData
+				//}
+				parseType(dataItem, field, columnType, bytesData)
 			}
-			data = append(data, d)
+			data = append(data, dataItem)
 		}
 
 		return data
@@ -215,4 +218,18 @@ func convertItems(items interface{}) []Item {
 		return t
 	}
 	panic("invalid collection item gives")
+}
+
+func parseType(item map[string]interface{},field string, columnType string, bytesData []byte) {
+	if str.Contains(columnType, "INT") {
+		integer, _ := strconv.Atoi(string(bytesData))
+		item[field] = integer
+	} else if str.Contains(columnType, "CHAR", "TEXT", "TIMESTAMP", "DATE") {
+		item[field] = string(bytesData)
+	} else if str.Contains(columnType, "DECIMAL", "FLOAT") {
+		f, _ := strconv.ParseFloat(string(bytesData), 64)
+		item[field] = f
+	} else {
+		item[field] = bytesData
+	}
 }
