@@ -19,3 +19,8 @@ func (h *ModelHolder) Query() *RithythmBuilder {
 	b.From(h.model.GetTable())
 	return b.SetModel(h.model)
 }
+
+func (h *ModelHolder) Find(id int64, columns... string) DataModel {
+
+	return h.Query().Find(id, columns...)
+}

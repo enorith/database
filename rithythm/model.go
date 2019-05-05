@@ -18,6 +18,7 @@ type DataModel interface {
 	GetInt(field string) (int, error)
 	GetInt64(field string) (int64, error)
 	GetInt32(field string) (int32, error)
+	MarshalJSON() ([]byte, error)
 }
 
 type Model struct {

@@ -128,6 +128,7 @@ func (c *Connection) GetDB(connection ...string) (*sql.DB, error) {
 
 	c.Using(using)
 
+	// if using opened connection
 	if opened, exits := opened[using]; exits {
 		c.db = opened
 		return opened, nil
