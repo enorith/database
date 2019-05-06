@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	env "github.com/CaoJiayuan/rithenv"
 	ev "github.com/CaoJiayuan/rithev"
+	"sync"
 )
 
 type DriverRegister = func(config ConnectionConfig) (*sql.DB, error)
@@ -11,7 +12,26 @@ type DriverRegister = func(config ConnectionConfig) (*sql.DB, error)
 var driverRegister map[string]DriverRegister
 
 var Conns Connections
-var opened = map[string]*sql.DB{}
+
+var openDBs *OpenDBs
+
+type OpenDBs struct {
+	opened  map[string]*sql.DB
+	m sync.RWMutex
+}
+
+func (d *OpenDBs) Get(name string) (*sql.DB, bool) {
+	d.m.RLock()
+	opened, exists := d.opened[name]
+	d.m.RUnlock()
+	return opened, exists
+}
+
+func (d *OpenDBs) Put(name string, db *sql.DB) {
+	d.m.Lock()
+	d.opened[name] = db
+	d.m.Unlock()
+}
 
 type DBEvent struct {
 	ev.Event
@@ -129,7 +149,7 @@ func (c *Connection) GetDB(connection ...string) (*sql.DB, error) {
 	c.Using(using)
 
 	// if using opened connection
-	if opened, exits := opened[using]; exits {
+	if opened, exits := openDBs.Get(using); exits {
 		c.db = opened
 		return opened, nil
 	}
@@ -139,7 +159,8 @@ func (c *Connection) GetDB(connection ...string) (*sql.DB, error) {
 	c.setGrammar(config.Driver)
 	register := driverRegister[config.Driver]
 	db, err := register(config)
-	opened[using] = db
+	//opened[using] = db
+	openDBs.Put(using, db)
 	c.db = db
 	return db, err
 }
@@ -195,4 +216,8 @@ func NewConnection(conn string, config Config) *Connection {
 
 	Conns.Push(connection)
 	return connection
+}
+
+func init() {
+	openDBs = &OpenDBs{map[string]*sql.DB{}, sync.RWMutex{}}
 }
