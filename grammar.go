@@ -9,6 +9,7 @@ var grammars map[string]Grammar
 
 type Grammar interface {
 	Compile(s *QueryBuilder) string
+	CompileWheres(s *QueryBuilder, withKeyword bool) string
 }
 
 // SqlGrammar is sql compiler
@@ -19,7 +20,7 @@ type SqlGrammar struct {
 func (g *SqlGrammar) Compile(s *QueryBuilder) string {
 	sql := g.compileColumns(s) +
 		g.compileFrom(s) +
-		g.compileWheres(s) +
+		g.CompileWheres(s, true) +
 		g.compileOrders(s) +
 		g.compileLimit(s) +
 		g.compileOffset(s)
@@ -42,18 +43,31 @@ func (g *SqlGrammar) compileFrom(s *QueryBuilder) string {
 	return fmt.Sprintf("from `%s` ", s.from)
 }
 
-func (g *SqlGrammar) compileWheres(s *QueryBuilder) string {
+func (g *SqlGrammar) CompileWheres(s *QueryBuilder, withKeyword bool) string {
 	where := ""
 
 	for k, w := range s.wheres {
-		var appendStr string
-		if k != 0 {
-			appendStr = w[3] + " "
+		var (
+			andOr       string
+			placeholder string
+		)
+		whereType := w[1]
+		operator := w[2]
+		if whereType == whereBasic || whereType == whereNull{
+			if k != 0 {
+				andOr = w[3] + " "
+			}
+
+			if whereType == whereBasic {
+				placeholder = "? "
+			}
 		}
-		where += fmt.Sprintf("%s%s %s ? ", appendStr, w[0], w[2])
+
+		column := w[0]
+		where += fmt.Sprintf("%s%s %s %s", andOr, column, operator, placeholder)
 	}
 
-	if len(where) > 0 {
+	if len(where) > 0 && withKeyword {
 		where = "where " + where
 	}
 	return where

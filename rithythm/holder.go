@@ -24,3 +24,10 @@ func (h *ModelHolder) Find(id int64, columns... string) DataModel {
 
 	return h.Query().Find(id, columns...)
 }
+
+
+func (h *ModelHolder) Make(data map[string]interface{}) DataModel {
+
+	h.model.unmarshal(data)
+	return h.model
+}

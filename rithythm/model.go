@@ -2,7 +2,6 @@ package rithythm
 
 import (
 	"encoding/json"
-	"github.com/CaoJiayuan/goutilities/define"
 	"errors"
 	"fmt"
 )
@@ -11,7 +10,7 @@ type DataModel interface {
 	GetTable() string
 	GetConnectionName() string
 	GetKeyName() string
-	marshal(data define.Map)
+	unmarshal(data map[string]interface{})
 	Clone() DataModel
     GetValue(field string) interface{}
 	GetString(field string) (string, error)
@@ -19,14 +18,19 @@ type DataModel interface {
 	GetInt64(field string) (int64, error)
 	GetInt32(field string) (int32, error)
 	MarshalJSON() ([]byte, error)
+	GetOriginals() map[string]interface{}
 }
 
 type Model struct {
-	originals define.Map
+	originals map[string]interface{}
 }
 
 func (m *Model) MarshalJSON() ([]byte, error) {
 	return json.Marshal(m.originals)
+}
+
+func (m *Model) GetOriginals() map[string]interface{} {
+	return m.originals
 }
 
 func (m *Model) GetTable() string {
@@ -81,7 +85,7 @@ func (m *Model) GetInt32(field string) (int32, error) {
 	return 0, errors.New(fmt.Sprintf("try to get int32 value from field [%s]", field))
 }
 
-func (m *Model) marshal(data define.Map) {
+func (m *Model) unmarshal(data map[string]interface{}) {
 	m.originals = data
 }
 

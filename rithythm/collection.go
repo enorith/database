@@ -50,7 +50,7 @@ func ItemToModel(model DataModel, item *rithdb.CollectionItem) DataModel {
 	}
 	if data, ok := item.Original().(map[string]interface{}); ok {
 		m := model.Clone()
-		m.marshal(data)
+		m.unmarshal(data)
 		return m
 	}
 

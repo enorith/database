@@ -22,6 +22,26 @@ func (r *RithythmBuilder) Select(columns... string) *RithythmBuilder {
 	return r
 }
 
+func (r *RithythmBuilder) Where(column string, operator string, value interface{}, and bool) *RithythmBuilder {
+	r.QueryBuilder.Where(column, operator, value, and)
+	return r
+}
+
+func (r *RithythmBuilder) WhereNull(column string, and bool) *RithythmBuilder {
+	r.QueryBuilder.WhereNull(column, and)
+	return r
+}
+
+func (r *RithythmBuilder) WhereNotNull(column string, and bool) *RithythmBuilder {
+	r.QueryBuilder.WhereNotNull(column, and)
+	return r
+}
+
+func (r *RithythmBuilder) WhereNest(and bool, handler rithdb.WhereNestHandler) *RithythmBuilder {
+	r.QueryBuilder.WhereNest(and, handler)
+	return r
+}
+
 func (r *RithythmBuilder) Take(limit int) *RithythmBuilder {
 	r.QueryBuilder.Take(limit)
 	return r

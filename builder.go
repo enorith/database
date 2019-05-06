@@ -8,52 +8,102 @@ type Value struct {
 	v interface{}
 }
 
-func (va *Value) GetString() string{
-	if s,ok := va.v.(string); ok {
+var (
+	whereBasic = "basic"
+	whereSub   = "sub"
+	whereNest  = "nest"
+	whereNull  = "null"
+)
+
+type WhereNestHandler func(builder *QueryBuilder)
+
+func (va *Value) GetString() string {
+	if s, ok := va.v.(string); ok {
 		return s
 	}
-	if s,ok := va.v.([]byte); ok {
+	if s, ok := va.v.([]byte); ok {
 		return string(s)
 	}
 	return ""
 }
 
-func (va *Value) String() string{
+func (va *Value) String() string {
 	return va.GetString()
 }
 
 type Constraint struct {
-	kind string
-	operator string
+	kind      string
+	operator  string
 	connector string
 }
 
 type QueryBuilder struct {
 	connection *Connection
-	columns []string
-	from string
+	columns    []string
+	from       string
 
-	wheres [][4]string
+	wheres   [][4]string
 	bindings map[string][]interface{}
 	// Do not use map
 	orders [][2]string
-	limit int
+	limit  int
 	offset int
 }
 
 func (q *QueryBuilder) Where(column string, operator string, value interface{}, and bool) *QueryBuilder {
+	q.addWhere(whereBasic, column, operator, and)
+	q.bindings["where"] = append(q.bindings["where"], value)
+
+	return q
+}
+
+func (q *QueryBuilder) addWhere(typ string, column string, operator string, and bool) *QueryBuilder {
 	var b string
 	if and {
 		b = "and"
 	} else {
 		b = "or"
 	}
-	q.wheres = append(q.wheres, [4]string{column, "basic", operator, b})
-	q.bindings["where"] = append(q.bindings["where"], value)
-	
+
+	q.wheres = append(q.wheres, [4]string{column, typ, operator, b})
+
 	return q
 }
 
+func (q *QueryBuilder) WhereNull(column string, and bool) *QueryBuilder {
+
+	q.addWhere(whereNull, column, "is null", and)
+
+	return q
+}
+
+func (q *QueryBuilder) WhereNotNull(column string, and bool) *QueryBuilder {
+
+	q.addWhere(whereNull, column, "is not null", and)
+
+	return q
+}
+
+func (q *QueryBuilder) WhereNest(and bool, handler WhereNestHandler) *QueryBuilder {
+	builder := NewBuilder(q.connection.Clone())
+	handler(builder)
+
+	sql := q.connection.grammar.CompileWheres(builder, false)
+
+	for ty, value := range builder.bindings {
+		q.bindings[ty] = append(q.bindings[ty], value...)
+	}
+	var b string
+	if and {
+		b = "and"
+	} else {
+		b = "or"
+	}
+
+	q.wheres = append(q.wheres, [4]string{"(" + sql + ")", whereNest, "", b})
+
+	return q
+}
 
 func (q *QueryBuilder) AndWhere(column string, operator string, value interface{}) *QueryBuilder {
 	return q.Where(column, operator, value, true)
@@ -69,7 +119,7 @@ func (q *QueryBuilder) From(table string) *QueryBuilder {
 	return q
 }
 
-func (q *QueryBuilder) GetRaw(query string, bindings... interface{}) *Collection {
+func (q *QueryBuilder) GetRaw(query string, bindings ... interface{}) *Collection {
 
 	rows, err := q.connection.Select(query, bindings...)
 
@@ -79,7 +129,7 @@ func (q *QueryBuilder) GetRaw(query string, bindings... interface{}) *Collection
 	return Collect(rows)
 }
 
-func (q *QueryBuilder) Get(columns... string) *Collection {
+func (q *QueryBuilder) Get(columns ... string) *Collection {
 	if len(q.columns) < 1 {
 		q.columns = columns
 	}
@@ -102,7 +152,7 @@ func (q *QueryBuilder) SortAsc(by string) *QueryBuilder {
 	return q.Sort(by, "asc")
 }
 
-func (q *QueryBuilder) First(columns... string) *CollectionItem {
+func (q *QueryBuilder) First(columns ... string) *CollectionItem {
 	return q.Take(1).Get().First()
 }
 
@@ -118,7 +168,7 @@ func (q *QueryBuilder) FlatBindings() []interface{} {
 	return bs
 }
 
-func (q *QueryBuilder) Select(columns... string) *QueryBuilder {
+func (q *QueryBuilder) Select(columns ... string) *QueryBuilder {
 	q.columns = columns
 	return q
 }
@@ -145,7 +195,6 @@ func (q *QueryBuilder) GetColumns() []string {
 	return q.columns
 }
 
-
 func (q *QueryBuilder) GetConnection() *Connection {
 	return q.connection
 }
@@ -154,11 +203,10 @@ func NewValue(v interface{}) Value {
 	return Value{v}
 }
 
-func NewBuilder(c *Connection) *QueryBuilder{
+func NewBuilder(c *Connection) *QueryBuilder {
 	q := new(QueryBuilder)
 	q.connection = c
 	q.orders = [][2]string{}
 	q.bindings = map[string][]interface{}{}
 	return q
 }
-
