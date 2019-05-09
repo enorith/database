@@ -11,11 +11,15 @@ import (
 	"strconv"
 )
 
-type ItemResolver func(item CollectionItem, key int) interface{}
-type ItemFilter func(item CollectionItem, key int) bool
+type ItemResolver func(item CollectionItem, index int) interface{}
+type ItemFilter func(item CollectionItem, index int) bool
+
+type TypeParser func(row map[string]interface{}, field string, columnType string, bytesData []byte)
+
+var DefaultTypeParser TypeParser = parseType
 
 type CollectionItem struct {
-	item map[string]interface{}
+	item  map[string]interface{}
 	valid bool
 }
 
@@ -38,7 +42,7 @@ func (i *CollectionItem) Original() map[string]interface{} {
 }
 
 func (i *CollectionItem) IsNil(key string) bool {
-	v, err :=  i.GetValue(key)
+	v, err := i.GetValue(key)
 	if err != nil {
 		return true
 	}
@@ -86,12 +90,13 @@ func (i *CollectionItem) GetValue(key string) (interface{}, error) {
 
 /// Collection is database rows collection
 type Collection struct {
-	items []CollectionItem
+	items    []CollectionItem
 	iterator *RowsIterator
-	loaded bool
+	loaded   bool
 }
 
 func (c *Collection) MarshalJSON() ([]byte, error) {
+	c.loadAll()
 	return json.Marshal(c.items)
 }
 
@@ -146,6 +151,26 @@ func (c *Collection) Scan(dest ...interface{}) error {
 
 func (c *Collection) Next() bool {
 	return c.iterator.Next()
+}
+
+func (c *Collection) Pluck(key string) []interface{} {
+	var result []interface{}
+	c.Each(func(item CollectionItem, index int) interface{} {
+		v, _ := item.GetValue(key)
+		result = append(result, v)
+		return true
+	})
+	return result
+}
+
+func (c *Collection) PluckInt(key string) []int {
+	var result []int
+	c.Each(func(item CollectionItem, index int) interface{} {
+		v, _ := item.GetInt(key)
+		result = append(result, v)
+		return true
+	})
+	return result
 }
 
 func (c *Collection) NextAndScan(dest ...interface{}) bool {
@@ -209,13 +234,13 @@ func (i *RowsIterator) Read() map[string]interface{} {
 		columnType := i.types[index].DatabaseTypeName()
 
 		bytesData := values[index]
-		parseType(dataItem, field, columnType, bytesData)
+		DefaultTypeParser(dataItem, field, columnType, bytesData)
 	}
 	return dataItem
 }
 
-func CollectRows(rows *sql.Rows) (*Collection , error) {
-	ite,err := NewRowsIterator(rows)
+func CollectRows(rows *sql.Rows) (*Collection, error) {
+	ite, err := NewRowsIterator(rows)
 	if err != nil {
 		return nil, err
 	}
@@ -223,10 +248,6 @@ func CollectRows(rows *sql.Rows) (*Collection , error) {
 	return &Collection{
 		iterator: ite,
 	}, nil
-}
-
-func NewCollectionItem(item map[string]interface{}) *CollectionItem {
-	return &CollectionItem{item: item}
 }
 
 func NewRowsIterator(rows *sql.Rows) (*RowsIterator, error) {
@@ -249,10 +270,13 @@ func NewRowsIterator(rows *sql.Rows) (*RowsIterator, error) {
 }
 
 func parseType(item map[string]interface{}, field string, columnType string, bytesData []byte) {
-	if str.Contains(columnType, "INT") {
+	//TODO: parse types
+	if bytesData == nil {
+		item[field] = nil
+	} else if str.Contains(columnType, "INT") {
 		integer, _ := strconv.Atoi(string(bytesData))
 		item[field] = integer
-	} else if str.Contains(columnType, "CHAR", "TEXT", "TIMESTAMP", "DATE") {
+	}  else if str.Contains(columnType, "CHAR", "TEXT", "TIMESTAMP", "DATE") {
 		item[field] = string(bytesData)
 	} else if str.Contains(columnType, "DECIMAL", "FLOAT") {
 		f, _ := strconv.ParseFloat(string(bytesData), 64)
@@ -260,4 +284,5 @@ func parseType(item map[string]interface{}, field string, columnType string, byt
 	} else {
 		item[field] = bytesData
 	}
+	item[field + "_t"] = columnType
 }
