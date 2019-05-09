@@ -148,6 +148,10 @@ func (c *Collection) Next() bool {
 	return c.iterator.Next()
 }
 
+func (c *Collection) NextAndScan(dest ...interface{}) bool {
+	return c.iterator.NextAndScan(dest...)
+}
+
 func (c *Collection) Read() CollectionItem {
 	return CollectionItem{c.iterator.Read(), true}
 }
@@ -180,6 +184,16 @@ func (i *RowsIterator) Close() error {
 }
 func (i *RowsIterator) Scan(dest ...interface{}) error {
 	return i.rows.Scan(dest...)
+}
+
+func (i *RowsIterator) NextAndScan(dest ...interface{}) bool {
+	hasNext := i.Next()
+	err := i.Scan(dest...)
+	if err != nil {
+		return false
+	}
+
+	return hasNext
 }
 
 func (i *RowsIterator) Read() map[string]interface{} {
