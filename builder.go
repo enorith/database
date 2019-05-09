@@ -119,25 +119,37 @@ func (q *QueryBuilder) From(table string) *QueryBuilder {
 	return q
 }
 
-func (q *QueryBuilder) GetRaw(query string, bindings ... interface{}) *Collection {
+func (q *QueryBuilder) GetRaw(query string, bindings ... interface{}) (*Collection, error) {
 
 	rows, err := q.connection.Select(query, bindings...)
 
 	if err != nil {
 		panic(err)
 	}
-	return Collect(rows)
+	return CollectRows(rows)
 }
 
-func (q *QueryBuilder) Get(columns ... string) *Collection {
+func (q *QueryBuilder) Get(columns ... string) (*Collection, error) {
 	if len(q.columns) < 1 {
 		q.columns = columns
 	}
 
-	sql := q.ToSql()
-
-	return q.GetRaw(sql, q.FlatBindings()...)
+	return q.GetRaw(q.ToSql(), q.FlatBindings()...)
 }
+
+func (q *QueryBuilder) SelectRows(columns ... string) (*RowsIterator, error) {
+	if len(q.columns) < 1 {
+		q.columns = columns
+	}
+	rows, err := q.connection.Select(q.ToSql(), q.FlatBindings()...)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return NewRowsIterator(rows)
+}
+
 
 func (q *QueryBuilder) Sort(by string, direction string) *QueryBuilder {
 	q.orders = append(q.orders, [2]string{by, direction})
@@ -152,8 +164,13 @@ func (q *QueryBuilder) SortAsc(by string) *QueryBuilder {
 	return q.Sort(by, "asc")
 }
 
-func (q *QueryBuilder) First(columns ... string) *CollectionItem {
-	return q.Take(1).Get().First()
+func (q *QueryBuilder) First(columns ... string) (CollectionItem, error) {
+	coll, err := q.Take(1).Get()
+	if err  != nil {
+		return CollectionItem{}, err
+	}
+
+	return coll.First(), nil
 }
 
 func (q *QueryBuilder) FlatBindings() []interface{} {

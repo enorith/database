@@ -3,19 +3,20 @@ package rithdb
 import (
 	"database/sql"
 	"encoding/json"
-	"github.com/CaoJiayuan/goutilities/str"
-	"strconv"
+	//"github.com/CaoJiayuan/goutilities/str"
+	//"strconv"
 	"errors"
 	"fmt"
+	"github.com/CaoJiayuan/goutilities/str"
+	"strconv"
 )
 
-type Item interface{}
-type ItemResolver func(item Item, key int) interface{}
-type ItemFilter func(item Item, key int) bool
+type ItemResolver func(item CollectionItem, key int) interface{}
+type ItemFilter func(item CollectionItem, key int) bool
 
 type CollectionItem struct {
-	item Item
-	itemMap map[string]interface{}
+	item map[string]interface{}
+	valid bool
 }
 
 func (i *CollectionItem) ToJson() []byte {
@@ -32,16 +33,21 @@ func (i *CollectionItem) MarshalJSON() ([]byte, error) {
 	return json.Marshal(i.item)
 }
 
-func (i *CollectionItem) Original() Item {
+func (i *CollectionItem) Original() map[string]interface{} {
 	return i.item
 }
 
-func (i *CollectionItem) IsNil() bool {
-	return i.item == nil
+func (i *CollectionItem) IsNil(key string) bool {
+	v, err :=  i.GetValue(key)
+	if err != nil {
+		return true
+	}
+
+	return v == nil
 }
 
-func (i *CollectionItem) IsNotNil() bool {
-	return !i.IsNil()
+func (i *CollectionItem) IsNotNil(key string) bool {
+	return !i.IsNil(key)
 }
 
 func (i *CollectionItem) GetInt(key string) (int, error) {
@@ -57,8 +63,6 @@ func (i *CollectionItem) GetInt(key string) (int, error) {
 	return 0, err
 }
 
-
-
 func (i *CollectionItem) GetString(key string) (string, error) {
 	v, err := i.GetValue(key)
 	if err == nil {
@@ -72,35 +76,19 @@ func (i *CollectionItem) GetString(key string) (string, error) {
 	return "", err
 }
 
-
 func (i *CollectionItem) GetValue(key string) (interface{}, error) {
-	m, err := i.ToMap()
-
-	if err != nil {
-		return nil, err
-	}
-
-	if v, exists := m[key]; exists {
+	if v, exists := i.item[key]; exists {
 		return v, nil
 	}
 
 	return nil, errors.New(fmt.Sprintf("map key [%s] not exists", key))
 }
 
-
-func (i *CollectionItem) ToMap() (map[string]interface{}, error) {
-	if i.itemMap != nil {
-		return i.itemMap, nil
-	}
-	if m,ok := i.item.(map[string]interface{});ok {
-		return m, nil
-	}
-	return  nil, errors.New("collection item can not covert to map")
-}
-
-
+/// Collection is database rows collection
 type Collection struct {
-	items []Item
+	items []CollectionItem
+	iterator *RowsIterator
+	loaded bool
 }
 
 func (c *Collection) MarshalJSON() ([]byte, error) {
@@ -117,110 +105,136 @@ func (c *Collection) ToJson() []byte {
 	return j
 }
 
-func (c *Collection) GetItem(key int) *CollectionItem {
+func (c *Collection) GetItem(key int) CollectionItem {
+	c.loadAll()
 	if len(c.items) < 1 {
-		return NewCollectionItem(nil)
+		return CollectionItem{}
 	}
 
-	return NewCollectionItem(c.items[key])
+	return c.items[key]
 }
 
-func (c *Collection) First() *CollectionItem {
+func (c *Collection) Each(resolver ItemResolver) {
+	if len(c.items) > 0 {
+		for k, v := range c.items {
+			resolver(v, k)
+		}
+	}
+	defer c.Close()
+	var k int
+	for c.Next() {
+		resolver(c.Read(), k)
+		k++
+	}
+}
+
+func (c *Collection) First() CollectionItem {
 	return c.GetItem(0)
 }
 
-func (c *Collection) Map(re ItemResolver) *Collection {
-	var result []Item
-	for k, v := range c.items {
-		result = append(result, re(v, k))
-	}
-
-	return Collect(result)
-}
-
-func (c *Collection) Filter(filter ItemFilter) *Collection {
-	var result []Item
-	for k, v := range c.items {
-		if filter(v, k) {
-			result = append(result, v)
-		}
-	}
-
-	return Collect(result)
-}
-
-func (c *Collection) Pluck(value string) *Collection {
-	var result []Item
-	for _, v := range c.items {
-		if t, o := v.(map[string]interface{}); o {
-			if val, ok := t[value]; ok {
-				result = append(result, val)
-			}
-		}
-	}
-
-	return Collect(result)
-}
-
-func (c *Collection) GetItems() []Item {
+func (c *Collection) GetItems() []CollectionItem {
 	return c.items
 }
 
-func Collect(items interface{}) *Collection {
-	return &Collection{convertItems(items)}
+func (c *Collection) Close() error {
+	return c.iterator.Close()
 }
 
-func NewCollectionItem(item Item) *CollectionItem {
+func (c *Collection) Scan(dest ...interface{}) error {
+	return c.iterator.Scan(dest...)
+}
+
+func (c *Collection) Next() bool {
+	return c.iterator.Next()
+}
+
+func (c *Collection) Read() CollectionItem {
+	return CollectionItem{c.iterator.Read(), true}
+}
+
+func (c *Collection) loadAll() bool {
+	if !c.loaded {
+		defer c.Close()
+		for c.Next() {
+			c.items = append(c.items, c.Read())
+		}
+		c.loaded = true
+		return true
+	}
+
+	return false
+}
+
+type RowsIterator struct {
+	rows    *sql.Rows
+	types   []*sql.ColumnType
+	columns []string
+}
+
+func (i *RowsIterator) Next() bool {
+	return i.rows.Next()
+}
+
+func (i *RowsIterator) Close() error {
+	return i.rows.Close()
+}
+func (i *RowsIterator) Scan(dest ...interface{}) error {
+	return i.rows.Scan(dest...)
+}
+
+func (i *RowsIterator) Read() map[string]interface{} {
+	item := make([]interface{}, len(i.columns))
+	values := make([][]byte, len(i.columns))
+	for k := range values {
+		item[k] = &values[k]
+	}
+	dataItem := make(map[string]interface{})
+	i.rows.Scan(item...)
+
+	for index, field := range i.columns {
+		columnType := i.types[index].DatabaseTypeName()
+
+		bytesData := values[index]
+		parseType(dataItem, field, columnType, bytesData)
+	}
+	return dataItem
+}
+
+func CollectRows(rows *sql.Rows) (*Collection , error) {
+	ite,err := NewRowsIterator(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Collection{
+		iterator: ite,
+	}, nil
+}
+
+func NewCollectionItem(item map[string]interface{}) *CollectionItem {
 	return &CollectionItem{item: item}
 }
 
-func convertItems(items interface{}) []Item {
-	if t, ok := items.(*sql.Rows); ok {
-		defer t.Close()
-		cols, _ := t.Columns()
-		var data []Item
-		item := make([]interface{}, len(cols))
-		values := make([][]byte, len(cols))
-
-		for k := range values {
-			item[k] = &values[k]
-		}
-
-		types, _ := t.ColumnTypes()
-		for t.Next() {
-			t.Scan(item...)
-			dataItem := make(map[string]interface{})
-
-			for index, field := range cols {
-				columnType := types[index].DatabaseTypeName()
-
-				bytesData := values[index]
-				//
-				//if str.Contains(columnType, "INT") {
-				//	integer, _ := strconv.Atoi(string(bytesData))
-				//	dataItem[field] = integer
-				//} else if str.Contains(columnType, "CHAR", "TEXT", "TIMESTAMP", "DATE") {
-				//	dataItem[field] = string(bytesData)
-				//} else if str.Contains(columnType, "DECIMAL", "FLOAT") {
-				//	f, _ := strconv.ParseFloat(string(bytesData), 64)
-				//	dataItem[field] = f
-				//} else {
-				//	dataItem[field] = bytesData
-				//}
-				parseType(dataItem, field, columnType, bytesData)
-			}
-			data = append(data, dataItem)
-		}
-
-		return data
+func NewRowsIterator(rows *sql.Rows) (*RowsIterator, error) {
+	types, err := rows.ColumnTypes()
+	if err != nil {
+		return nil, err
 	}
-	if t, ok := items.([]Item); ok {
-		return t
+
+	cols, colErr := rows.Columns()
+
+	if colErr != nil {
+		return nil, colErr
 	}
-	panic("invalid collection item gives")
+
+	return &RowsIterator{
+		rows:    rows,
+		types:   types,
+		columns: cols,
+	}, err
 }
 
-func parseType(item map[string]interface{},field string, columnType string, bytesData []byte) {
+func parseType(item map[string]interface{}, field string, columnType string, bytesData []byte) {
 	if str.Contains(columnType, "INT") {
 		integer, _ := strconv.Atoi(string(bytesData))
 		item[field] = integer

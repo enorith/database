@@ -21,8 +21,8 @@ func (h *ModelHolder) Query() *RithythmBuilder {
 }
 
 func (h *ModelHolder) Find(id int64, columns... string) DataModel {
-
-	return h.Query().Find(id, columns...)
+	m, _ := h.Query().Find(id, columns...)
+	return m
 }
 
 

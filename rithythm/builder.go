@@ -56,24 +56,43 @@ func (r *RithythmBuilder) ForPage(page int, perPage int) *RithythmBuilder {
 	r.QueryBuilder.ForPage(page, perPage)
 	return r
 }
-func (r *RithythmBuilder) Get(columns... string) *RithythmCollection {
-	c := r.QueryBuilder.Get(columns...)
-	return CollectFromBase(c, r.model)
+func (r *RithythmBuilder) Get(columns... string) (*RithythmCollection, error) {
+	c, err := r.QueryBuilder.Get(columns...)
+
+	if err != nil {
+		return nil, err
+	}
+	return CollectFromBase(c, r.model), err
 }
 
-func (r *RithythmBuilder) GetRaw(query string, bindings... interface{}) *RithythmCollection {
-	c := r.QueryBuilder.GetRaw(query, bindings...)
-	return CollectFromBase(c, r.model)
+func (r *RithythmBuilder) GetRaw(query string, bindings... interface{}) (*RithythmCollection, error) {
+	c, err := r.QueryBuilder.GetRaw(query, bindings...)
+
+	if err != nil {
+		return nil, err
+	}
+	return CollectFromBase(c, r.model), nil
 }
 
-func (r *RithythmBuilder) First(columns... string) DataModel {
-	first := r.Take(1).Get(columns...).First()
-	return ItemToModel(r.model, first)
+func (r *RithythmBuilder) First(columns... string) (DataModel, error) {
+	c, err := r.Take(1).Get(columns...)
+
+	if err != nil {
+		return nil, err
+	}
+
+	first := c.First()
+	return ItemToModel(r.model, first), nil
 }
 
-func (r *RithythmBuilder) Find(id int64, columns... string) DataModel {
-	first := r.Where(r.model.GetKeyName(), "=", id, true).Get(columns...).First()
-	return ItemToModel(r.model, first)
+func (r *RithythmBuilder) Find(id int64, columns... string) (DataModel, error) {
+	first, err := r.Where(r.model.GetKeyName(), "=", id, true).First(columns...)
+
+	if err != nil {
+		return  nil, err
+	}
+
+	return first, nil
 }
 
 func Config(c rithdb.Config)  {
