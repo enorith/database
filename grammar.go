@@ -33,7 +33,7 @@ func (g *SqlGrammar) compileColumns(s *QueryBuilder) string {
 	if len(s.columns) < 1 {
 		col = "* "
 	} else {
-		col = strings.Join(s.columns, ", ") + " "
+		col = strings.Join(g.parseColumns(s.columns), ", ") + " "
 	}
 
 	return "select " + col
@@ -53,7 +53,8 @@ func (g *SqlGrammar) CompileWheres(s *QueryBuilder, withKeyword bool) string {
 		)
 		whereType := w[1]
 		operator := w[2]
-		if whereType == whereBasic || whereType == whereNull{
+		column := w[0]
+		if whereType == whereBasic || whereType == whereNull || whereType == whereSub {
 			if k != 0 {
 				andOr = w[3] + " "
 			}
@@ -61,9 +62,9 @@ func (g *SqlGrammar) CompileWheres(s *QueryBuilder, withKeyword bool) string {
 			if whereType == whereBasic {
 				placeholder = "? "
 			}
+			column = g.parseColumn(column)
 		}
 
-		column := w[0]
 		where += fmt.Sprintf("%s%s %s %s", andOr, column, operator, placeholder)
 	}
 
@@ -80,7 +81,7 @@ func (g *SqlGrammar) compileOrders(s *QueryBuilder) string {
 	var orders []string
 
 	for _, v := range s.orders {
-		orders = append(orders, fmt.Sprintf("%s %s", v[0], v[1]))
+		orders = append(orders, fmt.Sprintf("%s %s", g.parseColumn(v[0]), v[1]))
 	}
 
 	return fmt.Sprintf("order by %s ", strings.Join(orders, ", "))
@@ -98,6 +99,26 @@ func (g *SqlGrammar) compileOffset(s *QueryBuilder) string {
 		return ""
 	}
 	return fmt.Sprintf("offset %d ", s.offset)
+}
+
+func (g *SqlGrammar) parseColumn(column string) string {
+	var components []string
+	if strings.Contains(column, ".") {
+		components = strings.SplitN(column, ".", 2)
+	} else {
+		components = append(components, column)
+	}
+
+	return fmt.Sprintf("`%s`", strings.Join(components, "`.`"))
+}
+
+func (g *SqlGrammar) parseColumns(columns []string) []string {
+	var cols []string
+	for _, v := range columns {
+		cols = append(cols, g.parseColumn(v))
+	}
+
+	return cols
 }
 
 type MysqlGrammar struct {

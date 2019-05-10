@@ -22,7 +22,7 @@ func (r *RithythmBuilder) Select(columns... string) *RithythmBuilder {
 	return r
 }
 
-func (r *RithythmBuilder) Where(column string, operator string, value interface{}, and bool) *RithythmBuilder {
+func (r *RithythmBuilder) Where(column, operator string, value interface{}, and bool) *RithythmBuilder {
 	r.QueryBuilder.Where(column, operator, value, and)
 	return r
 }
@@ -37,7 +37,7 @@ func (r *RithythmBuilder) WhereNotNull(column string, and bool) *RithythmBuilder
 	return r
 }
 
-func (r *RithythmBuilder) WhereNest(and bool, handler rithdb.WhereNestHandler) *RithythmBuilder {
+func (r *RithythmBuilder) WhereNest(and bool, handler rithdb.QueryHandler) *RithythmBuilder {
 	r.QueryBuilder.WhereNest(and, handler)
 	return r
 }
@@ -56,6 +56,7 @@ func (r *RithythmBuilder) ForPage(page int, perPage int) *RithythmBuilder {
 	r.QueryBuilder.ForPage(page, perPage)
 	return r
 }
+
 func (r *RithythmBuilder) Get(columns... string) (*RithythmCollection, error) {
 	c, err := r.QueryBuilder.Get(columns...)
 

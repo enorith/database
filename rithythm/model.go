@@ -1,7 +1,6 @@
 package rithythm
 
 import (
-	"encoding/json"
 	"github.com/CaoJiayuan/rithdb"
 )
 
@@ -16,20 +15,19 @@ type DataModel interface {
 	GetInt(field string) (int64, error)
 	GetUInt(field string) (uint64, error)
 	MarshalJSON() ([]byte, error)
-	GetOriginals() map[string]interface{}
+	Original() map[string]interface{}
 }
 
 type Model struct {
-	originals map[string]interface{}
 	item rithdb.CollectionItem
 }
 
 func (m *Model) MarshalJSON() ([]byte, error) {
-	return json.Marshal(m.originals)
+	return m.item.MarshalJSON()
 }
 
-func (m *Model) GetOriginals() map[string]interface{} {
-	return m.originals
+func (m *Model) Original() map[string]interface{} {
+	return m.item.Original()
 }
 
 func (m *Model) GetTable() string {
@@ -71,7 +69,6 @@ func (m *Model) GetUInt(field string) (uint64, error) {
 
 func (m *Model) unmarshal(data rithdb.CollectionItem) {
 	m.item = data
-	m.originals = data.Original()
 }
 
 func Hold(m DataModel) *ModelHolder {

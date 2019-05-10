@@ -152,6 +152,7 @@ func (c *Collection) First() CollectionItem {
 }
 
 func (c *Collection) GetItems() []CollectionItem {
+	c.loadAll()
 	return c.items
 }
 

@@ -1,5 +1,7 @@
 package rithdb
 
+import "fmt"
+
 type SqlAble interface {
 	ToSql() string
 }
@@ -9,13 +11,15 @@ type Value struct {
 }
 
 var (
-	whereBasic = "basic"
-	whereSub   = "sub"
-	whereNest  = "nest"
-	whereNull  = "null"
+	whereBasic   = "b"
+	whereSub     = "s"
+	whereNest    = "x"
+	whereNull    = "n"
+	whereIn      = "i"
+	whereBetween = "t"
 )
 
-type WhereNestHandler func(builder *QueryBuilder)
+type QueryHandler func(builder *QueryBuilder)
 
 func (va *Value) GetString() string {
 	if s, ok := va.v.(string); ok {
@@ -43,21 +47,21 @@ type QueryBuilder struct {
 	from       string
 
 	wheres   [][4]string
-	bindings map[string][]interface{}
+	bindings []interface{}
 	// Do not use map
 	orders [][2]string
 	limit  int
 	offset int
 }
 
-func (q *QueryBuilder) Where(column string, operator string, value interface{}, and bool) *QueryBuilder {
+func (q *QueryBuilder) Where(column, operator string, value interface{}, and bool) *QueryBuilder {
 	q.addWhere(whereBasic, column, operator, and)
-	q.bindings["where"] = append(q.bindings["where"], value)
+	q.bindings = append(q.bindings, value)
 
 	return q
 }
 
-func (q *QueryBuilder) addWhere(typ string, column string, operator string, and bool) *QueryBuilder {
+func (q *QueryBuilder) addWhere(typ, column, operator string, and bool) *QueryBuilder {
 	var b string
 	if and {
 		b = "and"
@@ -84,25 +88,39 @@ func (q *QueryBuilder) WhereNotNull(column string, and bool) *QueryBuilder {
 	return q
 }
 
-func (q *QueryBuilder) WhereNest(and bool, handler WhereNestHandler) *QueryBuilder {
-	builder := NewBuilder(q.connection.Clone())
+func (q *QueryBuilder) WhereNest(and bool, handler QueryHandler) *QueryBuilder {
+	builder := q.NewQuery()
 	handler(builder)
 
 	sql := q.connection.grammar.CompileWheres(builder, false)
 
-	for ty, value := range builder.bindings {
-		q.bindings[ty] = append(q.bindings[ty], value...)
-	}
-	var b string
-	if and {
-		b = "and"
-	} else {
-		b = "or"
-	}
+	q.bindings = append(q.bindings, builder.bindings...)
 
-	q.wheres = append(q.wheres, [4]string{"(" + sql + ")", whereNest, "", b})
+	q.addWhere(whereNest, "("+sql+")", "", and)
 
 	return q
+}
+
+func (q *QueryBuilder) AndWhereNest(handler QueryHandler) *QueryBuilder {
+	return q.WhereNest(true, handler)
+}
+
+func (q *QueryBuilder) WhereSub(from, column, operator string, and bool, handler QueryHandler) *QueryBuilder {
+	builder := q.NewQuery()
+
+	handler(builder)
+	builder.From(from)
+	sql := q.connection.grammar.Compile(builder)
+
+	q.bindings = append(q.bindings, builder.bindings...)
+
+	q.addWhere(whereSub, column, fmt.Sprintf("%s (%s)", operator, sql), and)
+	return q
+}
+
+
+func (q *QueryBuilder) AndWhereSub(from, column, operator string, handler QueryHandler) *QueryBuilder {
+	return q.WhereSub(from, column, operator, true, handler)
 }
 
 func (q *QueryBuilder) AndWhere(column string, operator string, value interface{}) *QueryBuilder {
@@ -124,8 +142,9 @@ func (q *QueryBuilder) GetRaw(query string, bindings ... interface{}) (*Collecti
 	rows, err := q.connection.Select(query, bindings...)
 
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
+
 	return CollectRows(rows)
 }
 
@@ -150,7 +169,6 @@ func (q *QueryBuilder) SelectRows(columns ... string) (*RowsIterator, error) {
 	return NewRowsIterator(rows)
 }
 
-
 func (q *QueryBuilder) Sort(by string, direction string) *QueryBuilder {
 	q.orders = append(q.orders, [2]string{by, direction})
 
@@ -166,7 +184,7 @@ func (q *QueryBuilder) SortAsc(by string) *QueryBuilder {
 
 func (q *QueryBuilder) First(columns ... string) (CollectionItem, error) {
 	coll, err := q.Take(1).Get(columns...)
-	if err  != nil {
+	if err != nil {
 		return CollectionItem{}, err
 	}
 
@@ -174,15 +192,7 @@ func (q *QueryBuilder) First(columns ... string) (CollectionItem, error) {
 }
 
 func (q *QueryBuilder) FlatBindings() []interface{} {
-	var bs []interface{}
-
-	for _, v := range q.bindings {
-		for _, b := range v {
-			bs = append(bs, b)
-		}
-	}
-
-	return bs
+	return q.bindings
 }
 
 func (q *QueryBuilder) Select(columns ... string) *QueryBuilder {
@@ -216,6 +226,10 @@ func (q *QueryBuilder) GetConnection() *Connection {
 	return q.connection
 }
 
+func (q *QueryBuilder) NewQuery() *QueryBuilder {
+	return NewBuilder(q.connection.Clone())
+}
+
 func NewValue(v interface{}) Value {
 	return Value{v}
 }
@@ -224,6 +238,6 @@ func NewBuilder(c *Connection) *QueryBuilder {
 	q := new(QueryBuilder)
 	q.connection = c
 	q.orders = [][2]string{}
-	q.bindings = map[string][]interface{}{}
+	q.bindings = []interface{}{}
 	return q
 }
