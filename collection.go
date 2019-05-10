@@ -11,7 +11,7 @@ import (
 	"strconv"
 )
 
-type ItemResolver func(item CollectionItem, index int) interface{}
+type ItemHolder func(item CollectionItem, index int)
 type ItemFilter func(item CollectionItem, index int) bool
 
 type TypeParser func(row map[string]interface{}, field string, columnType string, bytesData []byte)
@@ -119,7 +119,7 @@ func (c *Collection) GetItem(key int) CollectionItem {
 	return c.items[key]
 }
 
-func (c *Collection) Each(resolver ItemResolver) {
+func (c *Collection) Each(resolver ItemHolder) {
 	if len(c.items) > 0 {
 		for k, v := range c.items {
 			resolver(v, k)
@@ -155,24 +155,23 @@ func (c *Collection) Next() bool {
 
 func (c *Collection) Pluck(key string) []interface{} {
 	var result []interface{}
-	c.Each(func(item CollectionItem, index int) interface{} {
+	c.Each(func(item CollectionItem, index int) {
 		v, _ := item.GetValue(key)
 		result = append(result, v)
-		return true
 	})
 	return result
 }
 
 func (c *Collection) PluckInt(key string) []int {
 	var result []int
-	c.Each(func(item CollectionItem, index int) interface{} {
+	c.Each(func(item CollectionItem, index int) {
 		v, _ := item.GetInt(key)
 		result = append(result, v)
-		return true
 	})
 	return result
 }
 
+//NextAndScan recommend way to get row
 func (c *Collection) NextAndScan(dest ...interface{}) bool {
 	return c.iterator.NextAndScan(dest...)
 }
@@ -222,12 +221,13 @@ func (i *RowsIterator) NextAndScan(dest ...interface{}) bool {
 }
 
 func (i *RowsIterator) Read() map[string]interface{} {
-	item := make([]interface{}, len(i.columns))
-	values := make([][]byte, len(i.columns))
+	length := len(i.columns)
+	item := make([]interface{}, length)
+	values := make([][]byte, length)
 	for k := range values {
 		item[k] = &values[k]
 	}
-	dataItem := make(map[string]interface{})
+	dataItem := map[string]interface{}{}
 	i.rows.Scan(item...)
 
 	for index, field := range i.columns {
@@ -274,7 +274,18 @@ func parseType(item map[string]interface{}, field string, columnType string, byt
 	if bytesData == nil {
 		item[field] = nil
 	} else if str.Contains(columnType, "INT") {
-		integer, _ := strconv.Atoi(string(bytesData))
+		strData := string(bytesData)
+		size := 8
+		switch columnType {
+			case "BIGINT":
+				size = 32
+				break
+			case "INT":
+				size = 16
+				break
+		}
+		integer,_ := strconv.ParseInt(strData, 10, size)
+
 		item[field] = integer
 	}  else if str.Contains(columnType, "CHAR", "TEXT", "TIMESTAMP", "DATE") {
 		item[field] = string(bytesData)
@@ -284,5 +295,4 @@ func parseType(item map[string]interface{}, field string, columnType string, byt
 	} else {
 		item[field] = bytesData
 	}
-	item[field + "_t"] = columnType
 }
