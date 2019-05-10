@@ -9,12 +9,13 @@ import (
 	"fmt"
 	"github.com/CaoJiayuan/goutilities/str"
 	"strconv"
+	"reflect"
 )
 
 type ItemHolder func(item CollectionItem, index int)
 type ItemFilter func(item CollectionItem, index int) bool
 
-type TypeParser func(row map[string]interface{}, field string, columnType string, bytesData []byte)
+type TypeParser func(row map[string]interface{}, field string, columnType *sql.ColumnType, bytesData []byte)
 
 var DefaultTypeParser TypeParser = parseType
 
@@ -231,10 +232,8 @@ func (i *RowsIterator) Read() map[string]interface{} {
 	i.rows.Scan(item...)
 
 	for index, field := range i.columns {
-		columnType := i.types[index].DatabaseTypeName()
-
 		bytesData := values[index]
-		DefaultTypeParser(dataItem, field, columnType, bytesData)
+		DefaultTypeParser(dataItem, field, i.types[index], bytesData)
 	}
 	return dataItem
 }
@@ -269,27 +268,63 @@ func NewRowsIterator(rows *sql.Rows) (*RowsIterator, error) {
 	}, err
 }
 
-func parseType(item map[string]interface{}, field string, columnType string, bytesData []byte) {
-	//TODO: parse types
+func parseType(item map[string]interface{}, field string, columnType *sql.ColumnType, bytesData []byte) {
+	typeName := columnType.DatabaseTypeName()
 	if bytesData == nil {
 		item[field] = nil
-	} else if str.Contains(columnType, "INT") {
+	} else if str.Contains(typeName, "INT") {
+		unsigned := false
+		size := 32
 		strData := string(bytesData)
-		size := 8
-		switch columnType {
-			case "BIGINT":
-				size = 32
-				break
-			case "INT":
-				size = 16
-				break
+		scanType := columnType.ScanType()
+		switch scanType.Kind() {
+		case reflect.Uint8:
+			unsigned = true
+			size = 8
+			break
+		case reflect.Uint16:
+			unsigned = true
+			size = 16
+			break
+		case reflect.Uint:
+		case reflect.Uint32:
+			unsigned = true
+			size = 32
+			break
+		case reflect.Uint64:
+			unsigned = true
+			size = 64
+			break
+		case reflect.Int8:
+			unsigned = false
+			size = 8
+			break
+		case reflect.Int16:
+			unsigned = false
+			size = 16
+			break
+		case reflect.Int:
+		case reflect.Int32:
+			unsigned = false
+			size = 32
+			break
+		case reflect.Int64:
+			unsigned = false
+			size = 64
+			break
 		}
-		integer,_ := strconv.ParseInt(strData, 10, size)
 
-		item[field] = integer
-	}  else if str.Contains(columnType, "CHAR", "TEXT", "TIMESTAMP", "DATE") {
+		if unsigned {
+			unsignedInt,_ := strconv.ParseUint(strData, 10, size)
+			item[field] = unsignedInt
+		} else  {
+			integer,_ := strconv.ParseInt(strData, 10, size)
+			item[field] = integer
+		}
+
+	}  else if str.Contains(typeName, "CHAR", "TEXT", "TIMESTAMP", "DATE") {
 		item[field] = string(bytesData)
-	} else if str.Contains(columnType, "DECIMAL", "FLOAT") {
+	} else if str.Contains(typeName, "DECIMAL", "FLOAT") {
 		f, _ := strconv.ParseFloat(string(bytesData), 64)
 		item[field] = f
 	} else {
