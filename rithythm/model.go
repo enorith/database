@@ -2,27 +2,26 @@ package rithythm
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
+	"github.com/CaoJiayuan/rithdb"
 )
 
 type DataModel interface {
 	GetTable() string
 	GetConnectionName() string
 	GetKeyName() string
-	unmarshal(data map[string]interface{})
+	unmarshal(data rithdb.CollectionItem)
 	Clone() DataModel
     GetValue(field string) interface{}
 	GetString(field string) (string, error)
-	GetInt(field string) (int, error)
-	GetInt64(field string) (int64, error)
-	GetInt32(field string) (int32, error)
+	GetInt(field string) (int64, error)
+	GetUInt(field string) (uint64, error)
 	MarshalJSON() ([]byte, error)
 	GetOriginals() map[string]interface{}
 }
 
 type Model struct {
 	originals map[string]interface{}
+	item rithdb.CollectionItem
 }
 
 func (m *Model) MarshalJSON() ([]byte, error) {
@@ -50,43 +49,29 @@ func (m *Model) GetKeyName() string {
 }
 
 func (m *Model) GetValue(field string) interface{} {
-	return m.originals[field]
+	v,err := m.item.GetValue(field)
+	if err != nil {
+		return nil
+	}
+
+	return v
 }
 
 func (m *Model) GetString(field string) (string, error) {
-	if s, ok := m.GetValue(field).(string); ok {
-		return s, nil
-	}
-
-	return "", errors.New(fmt.Sprintf("try to get string value from field [%s]", field))
+	return m.item.GetString(field)
 }
 
-func (m *Model) GetInt(field string) (int, error) {
-	if i, ok := m.GetValue(field).(int); ok {
-		return i, nil
-	}
-
-	return 0, errors.New(fmt.Sprintf("try to get int value from field [%s]", field))
+func (m *Model) GetInt(field string) (int64, error) {
+	return m.item.GetInt(field)
 }
 
-func (m *Model) GetInt64(field string) (int64, error) {
-	if i, ok := m.GetValue(field).(int64); ok {
-		return i, nil
-	}
-
-	return 0, errors.New(fmt.Sprintf("try to get int64 value from field [%s]", field))
+func (m *Model) GetUInt(field string) (uint64, error) {
+	return m.item.GetUInt(field)
 }
 
-func (m *Model) GetInt32(field string) (int32, error) {
-	if i, ok := m.GetValue(field).(int32); ok {
-		return i, nil
-	}
-
-	return 0, errors.New(fmt.Sprintf("try to get int32 value from field [%s]", field))
-}
-
-func (m *Model) unmarshal(data map[string]interface{}) {
-	m.originals = data
+func (m *Model) unmarshal(data rithdb.CollectionItem) {
+	m.item = data
+	m.originals = data.Original()
 }
 
 func Hold(m DataModel) *ModelHolder {

@@ -55,10 +55,23 @@ func (i *CollectionItem) IsNotNil(key string) bool {
 	return !i.IsNil(key)
 }
 
-func (i *CollectionItem) GetInt(key string) (int, error) {
+func (i *CollectionItem) GetInt(key string) (int64, error) {
 	v, err := i.GetValue(key)
 	if err == nil {
-		if i, ok := v.(int); ok {
+		if i, ok := v.(int64); ok {
+			return i, nil
+		} else {
+			return 0, errors.New(fmt.Sprintf("try to get int value from key [%s]", key))
+		}
+	}
+
+	return 0, err
+}
+
+func (i *CollectionItem) GetUInt(key string) (uint64, error) {
+	v, err := i.GetValue(key)
+	if err == nil {
+		if i, ok := v.(uint64); ok {
 			return i, nil
 		} else {
 			return 0, errors.New(fmt.Sprintf("try to get int value from key [%s]", key))
@@ -163,8 +176,8 @@ func (c *Collection) Pluck(key string) []interface{} {
 	return result
 }
 
-func (c *Collection) PluckInt(key string) []int {
-	var result []int
+func (c *Collection) PluckInt(key string) []int64 {
+	var result []int64
 	c.Each(func(item CollectionItem, index int) {
 		v, _ := item.GetInt(key)
 		result = append(result, v)
@@ -266,6 +279,10 @@ func NewRowsIterator(rows *sql.Rows) (*RowsIterator, error) {
 		types:   types,
 		columns: cols,
 	}, err
+}
+
+func NewCollectionItem(data map[string]interface{}) CollectionItem {
+	return CollectionItem{data, true}
 }
 
 func parseType(item map[string]interface{}, field string, columnType *sql.ColumnType, bytesData []byte) {

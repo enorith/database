@@ -165,7 +165,7 @@ func (q *QueryBuilder) SortAsc(by string) *QueryBuilder {
 }
 
 func (q *QueryBuilder) First(columns ... string) (CollectionItem, error) {
-	coll, err := q.Take(1).Get()
+	coll, err := q.Take(1).Get(columns...)
 	if err  != nil {
 		return CollectionItem{}, err
 	}
