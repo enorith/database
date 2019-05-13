@@ -52,6 +52,7 @@ type QueryBuilder struct {
 	orders [][2]string
 	limit  int
 	offset int
+	inLens []int
 }
 
 func (q *QueryBuilder) Where(column, operator string, value interface{}, and bool) *QueryBuilder {
@@ -105,6 +106,44 @@ func (q *QueryBuilder) AndWhereNest(handler QueryHandler) *QueryBuilder {
 	return q.WhereNest(true, handler)
 }
 
+func (q *QueryBuilder) Exists() bool {
+	sql := q.connection.grammar.CompileExists(q)
+	rows, err := q.connection.Select(sql, q.FlatBindings()...)
+	if err != nil {
+		return false
+	}
+	var exists bool
+	rows.Next()
+	rows.Scan(&exists)
+	rows.Close()
+
+	return exists
+}
+
+func (q *QueryBuilder) Count(column ...string) int64 {
+
+	sql := q.connection.grammar.CompileCount(q, column...)
+
+	rows, err := q.connection.Select(sql, q.FlatBindings()...)
+	if err != nil {
+		return 0
+	}
+	var aggregate int64
+	rows.Next()
+	rows.Scan(&aggregate)
+	rows.Close()
+
+	return aggregate
+}
+
+func (q *QueryBuilder) WhereIn(column string, value []interface{}, and bool) *QueryBuilder {
+	q.addWhere(whereIn, column, "in", and)
+	q.bindings = append(q.bindings, value)
+	q.inLens = append(q.inLens, len(value))
+
+	return q
+}
+
 func (q *QueryBuilder) WhereSub(from, column, operator string, and bool, handler QueryHandler) *QueryBuilder {
 	builder := q.NewQuery()
 
@@ -156,7 +195,7 @@ func (q *QueryBuilder) Get(columns ... string) (*Collection, error) {
 	return q.GetRaw(q.ToSql(), q.FlatBindings()...)
 }
 
-func (q *QueryBuilder) SelectRows(columns ... string) (*RowsIterator, error) {
+func (q *QueryBuilder) GetRows(columns ... string) (*RowsIterator, error) {
 	if len(q.columns) < 1 {
 		q.columns = columns
 	}
@@ -192,7 +231,44 @@ func (q *QueryBuilder) First(columns ... string) (CollectionItem, error) {
 }
 
 func (q *QueryBuilder) FlatBindings() []interface{} {
-	return q.bindings
+	var value []interface{}
+
+	for _, v := range q.bindings {
+		if inValue, ok := v.([]interface{}); ok {
+			value = append(value, inValue...)
+		} else if betweenValue, ok := v.([2]interface{}); ok {
+			value = append(value, betweenValue[0], betweenValue[1])
+		} else {
+			value = append(value, v)
+		}
+	}
+
+	return value
+}
+
+func (q *QueryBuilder) Create(attributes map[string]interface{}, key ...string) (CollectionItem, error) {
+	sql,bindings := q.connection.grammar.CompileInsertOne(q.from, attributes)
+
+	id, err := q.connection.InsertGetId(sql, bindings...)
+	if err != nil {
+		return CollectionItem{}, err
+	}
+	var primary string
+
+	if id > 0 {
+		if len(key) > 0 {
+			primary = key[0]
+		} else {
+			primary = "id"
+		}
+	}
+
+	found, findErr := q.AndWhere(primary, "=", id).First()
+	if findErr != nil {
+		return CollectionItem{}, err
+	}
+
+	return found, nil
 }
 
 func (q *QueryBuilder) Select(columns ... string) *QueryBuilder {

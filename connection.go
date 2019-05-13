@@ -112,7 +112,7 @@ func (c *Connection) Exec(sql string, bindings ...interface{}) (sql.Result, erro
 }
 
 func (c *Connection) InsertGetId(sql string, bindings ...interface{}) (int64, error) {
-	result, execErr := c.Exec(sql, bindings)
+	result, execErr := c.Exec(sql, bindings...)
 	if execErr != nil {
 		return 0, execErr
 	}

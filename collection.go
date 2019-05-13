@@ -3,8 +3,6 @@ package rithdb
 import (
 	"database/sql"
 	"encoding/json"
-	//"github.com/CaoJiayuan/goutilities/str"
-	//"strconv"
 	"errors"
 	"fmt"
 	"github.com/CaoJiayuan/goutilities/str"
@@ -55,6 +53,10 @@ func (i *CollectionItem) IsNotNil(key string) bool {
 	return !i.IsNil(key)
 }
 
+func (i *CollectionItem) IsValid() bool {
+	return i.valid
+}
+
 func (i *CollectionItem) GetInt(key string) (int64, error) {
 	v, err := i.GetValue(key)
 	if err == nil {
@@ -102,7 +104,7 @@ func (i *CollectionItem) GetValue(key string) (interface{}, error) {
 	return nil, errors.New(fmt.Sprintf("map key [%s] not exists", key))
 }
 
-/// Collection is database rows collection
+//Collection is database rows collection
 type Collection struct {
 	items    []CollectionItem
 	iterator *RowsIterator
