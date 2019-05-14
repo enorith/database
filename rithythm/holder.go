@@ -31,3 +31,13 @@ func (h *ModelHolder) Make(data map[string]interface{}) DataModel {
 	h.model.unmarshal(rithdb.NewCollectionItem(data))
 	return h.model
 }
+
+func (h *ModelHolder) Create(data map[string]interface{}) (DataModel, error) {
+	item, err := h.Query().Create(data, h.model.GetKeyName())
+
+	if err != nil {
+		return &Model{}, err
+	}
+
+	return ItemToModel(h.model, item), nil
+}

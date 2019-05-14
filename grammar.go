@@ -91,7 +91,11 @@ func (g *SqlGrammar) CompileWheres(s *QueryBuilder, withKeyword bool) string {
 		whereType := w[1]
 		operator := w[2]
 		column := w[0]
-		if whereType == whereBasic || whereType == whereNull || whereType == whereSub || whereType == whereIn {
+		if whereType == whereBasic ||
+			whereType == whereNull ||
+			whereType == whereSub ||
+			whereType == whereIn ||
+			whereType == whereBetween {
 			if k != 0 {
 				andOr = w[3] + " "
 			}
@@ -100,11 +104,13 @@ func (g *SqlGrammar) CompileWheres(s *QueryBuilder, withKeyword bool) string {
 				placeholder = "? "
 			}
 			if whereType == whereIn {
-				placeholder = "(" + strings.Join(str.Duplicate("?", s.inLens[inIndex]), ",") +")"
+				placeholder = "(" + strings.Join(str.Duplicate("?", s.inLens[inIndex]), ",") +") "
 				inIndex++
 			}
+			if whereType == whereBetween {
+				placeholder = "? and ? "
+			}
 		}
-
 
 		where += fmt.Sprintf("%s%s %s %s", andOr, column, operator, placeholder)
 	}

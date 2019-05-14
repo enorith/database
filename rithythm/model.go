@@ -16,10 +16,12 @@ type DataModel interface {
 	GetUInt(field string) (uint64, error)
 	MarshalJSON() ([]byte, error)
 	Original() map[string]interface{}
+	IsValid() bool
 }
 
 type Model struct {
 	item rithdb.CollectionItem
+	valid bool
 }
 
 func (m *Model) MarshalJSON() ([]byte, error) {
@@ -36,6 +38,10 @@ func (m *Model) GetTable() string {
 
 func (m *Model) Clone() DataModel {
 	panic("Clone: not implemented")
+}
+
+func (m *Model) IsValid() bool {
+	return m.valid
 }
 
 func (m *Model) GetConnectionName() string {
@@ -69,6 +75,7 @@ func (m *Model) GetUInt(field string) (uint64, error) {
 
 func (m *Model) unmarshal(data rithdb.CollectionItem) {
 	m.item = data
+	m.valid = true
 }
 
 func Hold(m DataModel) *ModelHolder {

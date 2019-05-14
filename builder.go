@@ -6,10 +6,6 @@ type SqlAble interface {
 	ToSql() string
 }
 
-type Value struct {
-	v interface{}
-}
-
 var (
 	whereBasic   = "b"
 	whereSub     = "s"
@@ -20,20 +16,6 @@ var (
 )
 
 type QueryHandler func(builder *QueryBuilder)
-
-func (va *Value) GetString() string {
-	if s, ok := va.v.(string); ok {
-		return s
-	}
-	if s, ok := va.v.([]byte); ok {
-		return string(s)
-	}
-	return ""
-}
-
-func (va *Value) String() string {
-	return va.GetString()
-}
 
 type Constraint struct {
 	kind      string
@@ -140,6 +122,13 @@ func (q *QueryBuilder) WhereIn(column string, value []interface{}, and bool) *Qu
 	q.addWhere(whereIn, column, "in", and)
 	q.bindings = append(q.bindings, value)
 	q.inLens = append(q.inLens, len(value))
+
+	return q
+}
+
+func (q *QueryBuilder) WhereBetween(column string, one interface{}, two interface{}, and bool) *QueryBuilder {
+	q.addWhere(whereBetween, column, "between", and)
+	q.bindings = append(q.bindings, [2]interface{}{one, two})
 
 	return q
 }
@@ -304,10 +293,6 @@ func (q *QueryBuilder) GetConnection() *Connection {
 
 func (q *QueryBuilder) NewQuery() *QueryBuilder {
 	return NewBuilder(q.connection.Clone())
-}
-
-func NewValue(v interface{}) Value {
-	return Value{v}
 }
 
 func NewBuilder(c *Connection) *QueryBuilder {
