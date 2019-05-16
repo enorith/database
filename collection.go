@@ -22,6 +22,15 @@ type CollectionItem struct {
 	valid bool
 }
 
+func (i *CollectionItem) MarshalToCache() interface{} {
+	return i.item
+}
+
+func (i *CollectionItem) UnmarshalFromCache(decoder func(value interface{}) bool) bool {
+	i.valid = decoder(&i.item)
+	return i.valid
+}
+
 func (i *CollectionItem) ToJson() []byte {
 	j, err := i.MarshalJSON()
 
@@ -109,6 +118,31 @@ type Collection struct {
 	items    []CollectionItem
 	iterator *RowsIterator
 	loaded   bool
+}
+
+func (c *Collection) MarshalToCache() interface{} {
+	var data []map[string]interface{}
+
+	for _, v := range c.items {
+		data = append(data, v.item)
+	}
+
+	return data
+}
+
+func (c *Collection) UnmarshalFromCache(decoder func(value interface{}) bool) bool {
+	var data []map[string]interface{}
+	ok := decoder(&data)
+	if ok {
+		var result []CollectionItem
+		for _, v := range data {
+			result = append(result, NewCollectionItem(v))
+		}
+		c.items = result
+	}
+
+	c.loaded = true
+	return ok
 }
 
 func (c *Collection) MarshalJSON() ([]byte, error) {

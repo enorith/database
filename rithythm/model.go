@@ -17,11 +17,24 @@ type DataModel interface {
 	MarshalJSON() ([]byte, error)
 	Original() map[string]interface{}
 	IsValid() bool
+	MarshalToCache() interface{}
+	UnmarshalFromCache(decoder func(value interface{}) bool) bool
 }
 
 type Model struct {
 	item rithdb.CollectionItem
 	valid bool
+}
+
+func (m *Model) MarshalToCache() interface{} {
+	return m.Original()
+}
+
+func (m *Model) UnmarshalFromCache(decoder func(value interface{}) bool) bool {
+	 var data map[string]interface{}
+	 m.valid = decoder(&data)
+	 m.item = rithdb.NewCollectionItem(data)
+	 return m.valid
 }
 
 func (m *Model) MarshalJSON() ([]byte, error) {
