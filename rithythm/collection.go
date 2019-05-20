@@ -13,10 +13,17 @@ type RithythmCollection struct {
 }
 
 func CollectFromBase(c *rithdb.Collection, model DataModel) *RithythmCollection {
-	return &RithythmCollection{
-		c,
-		model,
-	}
+	collection := &RithythmCollection{}
+
+	collection.Collection = c
+
+	collection.model = model
+
+	return collection
+}
+
+func NewCollection(model DataModel) *RithythmCollection {
+	return CollectFromBase(&rithdb.Collection{}, model)
 }
 
 func (c *RithythmCollection) GetItem(key int) DataModel {

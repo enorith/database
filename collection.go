@@ -123,7 +123,7 @@ type Collection struct {
 func (c *Collection) MarshalToCache() interface{} {
 	var data []map[string]interface{}
 
-	for _, v := range c.items {
+	for _, v := range c.GetItems() {
 		data = append(data, v.item)
 	}
 
