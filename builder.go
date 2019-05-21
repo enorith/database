@@ -13,9 +13,11 @@ var (
 	whereNull    = "n"
 	whereIn      = "i"
 	whereBetween = "t"
+	whereColumn  = "c"
 )
 
 type QueryHandler func(builder *QueryBuilder)
+type JoinHandler func(clause *JoinClause)
 
 type Constraint struct {
 	kind      string
@@ -28,13 +30,15 @@ type QueryBuilder struct {
 	columns    []string
 	from       string
 
-	wheres   [][4]string
+	wheres   [][5]string
 	bindings []interface{}
 	// Do not use map
 	orders [][2]string
+	groups []string
 	limit  int
 	offset int
 	inLens []int
+	joins []*JoinClause
 }
 
 func (q *QueryBuilder) Where(column, operator string, value interface{}, and bool) *QueryBuilder {
@@ -44,15 +48,19 @@ func (q *QueryBuilder) Where(column, operator string, value interface{}, and boo
 	return q
 }
 
-func (q *QueryBuilder) addWhere(typ, column, operator string, and bool) *QueryBuilder {
+func (q *QueryBuilder) addWhere(typ, column, operator string, and bool, others ...string) *QueryBuilder {
 	var b string
 	if and {
 		b = "and"
 	} else {
 		b = "or"
 	}
+	var other = ""
+	if len(others) > 0 {
+		other = others[0]
+	}
 
-	q.wheres = append(q.wheres, [4]string{column, typ, operator, b})
+	q.wheres = append(q.wheres, [5]string{column, typ, operator, b, other})
 
 	return q
 }
@@ -64,9 +72,24 @@ func (q *QueryBuilder) WhereNull(column string, and bool) *QueryBuilder {
 	return q
 }
 
+
+func (q *QueryBuilder) AndWhereNull(column string) *QueryBuilder {
+
+	q.WhereNull(column, true)
+
+	return q
+}
+
 func (q *QueryBuilder) WhereNotNull(column string, and bool) *QueryBuilder {
 
 	q.addWhere(whereNull, column, "is not null", and)
+
+	return q
+}
+
+func (q *QueryBuilder) AndWhereNotNull(column string) *QueryBuilder {
+
+	q.WhereNotNull(column, true)
 
 	return q
 }
@@ -79,7 +102,7 @@ func (q *QueryBuilder) WhereNest(and bool, handler QueryHandler) *QueryBuilder {
 
 	q.bindings = append(q.bindings, builder.bindings...)
 
-	q.addWhere(whereNest, "("+sql+")", "", and)
+	q.addWhere(whereNest, sql, "", and)
 
 	return q
 }
@@ -162,6 +185,16 @@ func (q *QueryBuilder) OrWhere(column string, operator string, value interface{}
 func (q *QueryBuilder) From(table string) *QueryBuilder {
 
 	q.from = table
+	return q
+}
+
+func (q *QueryBuilder) FromSub(builder *QueryBuilder, as string) *QueryBuilder {
+
+	sql, bindings := builder.ToSql(), builder.FlatBindings()
+
+	q.from = Raw(fmt.Sprintf("(%s) as %s", sql, WrapValue(as)))
+	q.bindings = append(q.bindings, bindings...)
+
 	return q
 }
 
@@ -265,6 +298,23 @@ func (q *QueryBuilder) Select(columns ... string) *QueryBuilder {
 	return q
 }
 
+func (q *QueryBuilder) Join(table, first, operator, second, category string) *QueryBuilder {
+	q.JoinWith(category, table, func(clause *JoinClause) {
+		clause.On(first, operator, second,true)
+	})
+
+	return q
+}
+
+func (q *QueryBuilder) JoinWith(category, table string, handler JoinHandler) *QueryBuilder {
+	clause := &JoinClause{q.NewQuery(),category, table}
+	handler(clause)
+
+	q.joins = append(q.joins, clause)
+
+	return q
+}
+
 func (q *QueryBuilder) Take(limit int) *QueryBuilder {
 	q.limit = limit
 	return q
@@ -272,6 +322,11 @@ func (q *QueryBuilder) Take(limit int) *QueryBuilder {
 
 func (q *QueryBuilder) Offset(offset int) *QueryBuilder {
 	q.offset = offset
+	return q
+}
+
+func (q *QueryBuilder) GroupBy(columns ...string) *QueryBuilder {
+	q.groups = append(q.groups, columns...)
 	return q
 }
 
@@ -293,6 +348,24 @@ func (q *QueryBuilder) GetConnection() *Connection {
 
 func (q *QueryBuilder) NewQuery() *QueryBuilder {
 	return NewBuilder(q.connection.Clone())
+}
+
+type JoinClause struct {
+	*QueryBuilder
+	category string
+	table string
+}
+
+func (j *JoinClause) On(first, operator, second string, and bool) *JoinClause {
+	j.addWhere(whereColumn, first, operator, and, second)
+	return j
+}
+
+func (j *JoinClause) AndOn(first, operator, second string) *JoinClause {
+	return j.On(first, operator, second, true)
+}
+func (j *JoinClause) OrOn(first, operator, second string) *JoinClause {
+	return j.On(first, operator, second, false)
 }
 
 func NewBuilder(c *Connection) *QueryBuilder {
