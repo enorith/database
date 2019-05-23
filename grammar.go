@@ -120,6 +120,16 @@ func (g *SqlGrammar) CompileWheres(s *QueryBuilder, withKeyword bool) string {
 			column = Raw("(" + column + ")")
 		}
 
+		if whereType == whereNull {
+			operator = "is null"
+			placeholder = " "
+		}
+
+		if whereType == whereNotNull {
+			operator = "is not null"
+			placeholder = " "
+		}
+
 		where += fmt.Sprintf("%s%s %s %s", andOr, WrapValue(column), operator, placeholder)
 	}
 
@@ -143,14 +153,14 @@ func (g *SqlGrammar) compileOrders(s *QueryBuilder) string {
 }
 
 func (g *SqlGrammar) compileLimit(s *QueryBuilder) string {
-	if s.limit < 1 {
+	if s.limit < 0 {
 		return ""
 	}
 	return fmt.Sprintf("limit %d ", s.limit)
 }
 
 func (g *SqlGrammar) compileOffset(s *QueryBuilder) string {
-	if s.offset < 1 || s.limit < 1 {
+	if s.offset < 0 || s.limit < 0 {
 		return ""
 	}
 	return fmt.Sprintf("offset %d ", s.offset)

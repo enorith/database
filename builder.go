@@ -2,15 +2,12 @@ package rithdb
 
 import "fmt"
 
-type SqlAble interface {
-	ToSql() string
-}
-
 var (
 	whereBasic   = "b"
 	whereSub     = "s"
 	whereNest    = "x"
-	whereNull    = "n"
+	whereNull    = "l"
+	whereNotNull = "n"
 	whereIn      = "i"
 	whereBetween = "t"
 	whereColumn  = "c"
@@ -18,12 +15,6 @@ var (
 
 type QueryHandler func(builder *QueryBuilder)
 type JoinHandler func(clause *JoinClause)
-
-type Constraint struct {
-	kind      string
-	operator  string
-	connector string
-}
 
 type QueryBuilder struct {
 	connection *Connection
@@ -38,7 +29,7 @@ type QueryBuilder struct {
 	limit  int
 	offset int
 	inLens []int
-	joins []*JoinClause
+	joins  []*JoinClause
 }
 
 func (q *QueryBuilder) Where(column, operator string, value interface{}, and bool) *QueryBuilder {
@@ -67,11 +58,10 @@ func (q *QueryBuilder) addWhere(typ, column, operator string, and bool, others .
 
 func (q *QueryBuilder) WhereNull(column string, and bool) *QueryBuilder {
 
-	q.addWhere(whereNull, column, "is null", and)
+	q.addWhere(whereNull, column, "", and)
 
 	return q
 }
-
 
 func (q *QueryBuilder) AndWhereNull(column string) *QueryBuilder {
 
@@ -82,7 +72,7 @@ func (q *QueryBuilder) AndWhereNull(column string) *QueryBuilder {
 
 func (q *QueryBuilder) WhereNotNull(column string, and bool) *QueryBuilder {
 
-	q.addWhere(whereNull, column, "is not null", and)
+	q.addWhere(whereNotNull, column, "", and)
 
 	return q
 }
@@ -168,7 +158,6 @@ func (q *QueryBuilder) WhereSub(from, column, operator string, and bool, handler
 	q.addWhere(whereSub, column, fmt.Sprintf("%s (%s)", operator, sql), and)
 	return q
 }
-
 
 func (q *QueryBuilder) AndWhereSub(from, column, operator string, handler QueryHandler) *QueryBuilder {
 	return q.WhereSub(from, column, operator, true, handler)
@@ -269,7 +258,7 @@ func (q *QueryBuilder) FlatBindings() []interface{} {
 }
 
 func (q *QueryBuilder) Create(attributes map[string]interface{}, key ...string) (CollectionItem, error) {
-	sql,bindings := q.connection.grammar.CompileInsertOne(q.from, attributes)
+	sql, bindings := q.connection.grammar.CompileInsertOne(q.from, attributes)
 
 	id, err := q.connection.InsertGetId(sql, bindings...)
 	if err != nil {
@@ -300,14 +289,38 @@ func (q *QueryBuilder) Select(columns ... string) *QueryBuilder {
 
 func (q *QueryBuilder) Join(table, first, operator, second, category string) *QueryBuilder {
 	q.JoinWith(category, table, func(clause *JoinClause) {
-		clause.On(first, operator, second,true)
+		clause.On(first, operator, second, true)
+	})
+
+	return q
+}
+
+func (q *QueryBuilder) LeftJoin(table, first, operator, second string) *QueryBuilder {
+	q.JoinWith("left", table, func(clause *JoinClause) {
+		clause.On(first, operator, second, true)
+	})
+
+	return q
+}
+
+func (q *QueryBuilder) RightJoin(table, first, operator, second string) *QueryBuilder {
+	q.JoinWith("right", table, func(clause *JoinClause) {
+		clause.On(first, operator, second, true)
+	})
+
+	return q
+}
+
+func (q *QueryBuilder) InnerJoin(table, first, operator, second string) *QueryBuilder {
+	q.JoinWith("inner", table, func(clause *JoinClause) {
+		clause.On(first, operator, second, true)
 	})
 
 	return q
 }
 
 func (q *QueryBuilder) JoinWith(category, table string, handler JoinHandler) *QueryBuilder {
-	clause := &JoinClause{q.NewQuery(),category, table}
+	clause := &JoinClause{q.NewQuery(), category, table}
 	handler(clause)
 
 	q.joins = append(q.joins, clause)
@@ -350,10 +363,26 @@ func (q *QueryBuilder) NewQuery() *QueryBuilder {
 	return NewBuilder(q.connection.Clone())
 }
 
+func (q *QueryBuilder) Clone() *QueryBuilder {
+	return &QueryBuilder{
+		connection: q.connection,
+		columns:    q.columns,
+		from:       q.from,
+		wheres:     q.wheres,
+		bindings:   q.bindings,
+		orders:     q.orders,
+		groups:     q.groups,
+		limit:      q.limit,
+		offset:     q.offset,
+		inLens:     q.inLens,
+		joins:      q.joins,
+	}
+}
+
 type JoinClause struct {
 	*QueryBuilder
 	category string
-	table string
+	table    string
 }
 
 func (j *JoinClause) On(first, operator, second string, and bool) *JoinClause {
@@ -373,5 +402,7 @@ func NewBuilder(c *Connection) *QueryBuilder {
 	q.connection = c
 	q.orders = [][2]string{}
 	q.bindings = []interface{}{}
+	q.offset = -1
+	q.limit = -1
 	return q
 }
