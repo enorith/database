@@ -8,6 +8,7 @@ import (
 	"github.com/CaoJiayuan/goutilities/str"
 	"strconv"
 	"reflect"
+	"sort"
 )
 
 type ItemHolder func(item CollectionItem, index int)
@@ -113,11 +114,45 @@ func (i *CollectionItem) GetValue(key string) (interface{}, error) {
 	return nil, errors.New(fmt.Sprintf("map key [%s] not exists", key))
 }
 
+func sortLesser(i, j interface{}) bool {
+	switch i.(type) {
+	case uint64:
+		return i.(uint64) < j.(uint64)
+	case int64:
+		return i.(int64) < j.(int64)
+	case float32:
+		return i.(float32) < j.(float32)
+	case float64:
+		return i.(float64) < j.(float64)
+	}
+	return false
+}
+
 //Collection is database rows collection
 type Collection struct {
 	items    []CollectionItem
 	iterator *RowsIterator
 	loaded   bool
+	sortBy string
+	sortDesc bool
+}
+
+func (c *Collection) Len() int {
+	return len(c.GetItems())
+}
+
+func (c *Collection) Less(i, j int) bool {
+	ivd,_ := c.items[i].GetValue(c.sortBy)
+	jvd,_ := c.items[j].GetValue(c.sortBy)
+	if c.sortDesc {
+		return !sortLesser(ivd, jvd)
+	}
+
+	return sortLesser(ivd, jvd)
+}
+
+func (c *Collection) Swap(i, j int) {
+	c.items[i], c.items[j] = c.items[j], c.items[i]
 }
 
 func (c *Collection) MarshalToCache() interface{} {
@@ -169,6 +204,17 @@ func (c *Collection) GetItem(key int) CollectionItem {
 	return c.items[key]
 }
 
+func (c *Collection) SortBy(by string, desc bool) *Collection {
+
+	cs := c.Clone()
+	cs.sortBy = by
+	cs.sortDesc = desc
+
+	sort.Sort(cs)
+
+	return cs
+}
+
 func (c *Collection) Each(resolver ItemHolder) {
 	if len(c.items) > 0 {
 		for k, v := range c.items {
@@ -190,6 +236,10 @@ func (c *Collection) First() CollectionItem {
 func (c *Collection) GetItems() []CollectionItem {
 	c.loadAll()
 	return c.items
+}
+
+func (c *Collection) Clone() *Collection {
+	return &Collection{items: c.items, iterator: c.iterator, loaded: c.loaded}
 }
 
 func (c *Collection) Close() error {
