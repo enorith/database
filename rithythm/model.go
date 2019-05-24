@@ -13,7 +13,7 @@ type DataModel interface {
     GetValue(field string) interface{}
 	GetString(field string) (string, error)
 	GetInt(field string) (int64, error)
-	GetUInt(field string) (uint64, error)
+	GetUint(field string) (uint64, error)
 	MarshalJSON() ([]byte, error)
 	Original() map[string]interface{}
 	IsValid() bool
@@ -82,8 +82,8 @@ func (m *Model) GetInt(field string) (int64, error) {
 	return m.item.GetInt(field)
 }
 
-func (m *Model) GetUInt(field string) (uint64, error) {
-	return m.item.GetUInt(field)
+func (m *Model) GetUint(field string) (uint64, error) {
+	return m.item.GetUint(field)
 }
 
 func (m *Model) unmarshal(data rithdb.CollectionItem) {

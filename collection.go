@@ -79,7 +79,7 @@ func (i *CollectionItem) GetInt(key string) (int64, error) {
 	return 0, err
 }
 
-func (i *CollectionItem) GetUInt(key string) (uint64, error) {
+func (i *CollectionItem) GetUint(key string) (uint64, error) {
 	v, err := i.GetValue(key)
 	if err == nil {
 		if i, ok := v.(uint64); ok {
