@@ -1,6 +1,9 @@
 package rithdb
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 var (
 	whereBasic   = "b"
@@ -349,6 +352,28 @@ func (q *QueryBuilder) ForPage(page int, perPage int) *QueryBuilder {
 
 func (q *QueryBuilder) ToSql() string {
 	return q.connection.grammar.Compile(q)
+}
+
+func (q *QueryBuilder) Remember(key string, d time.Duration) (*Collection, error) {
+	if Cache != nil {
+		if Cache.Has(key) {
+			coll := &Collection{}
+			_, coll.loaded = Cache.Get(key, coll)
+
+			return coll, nil
+		} else {
+			co, err := q.Get()
+			if err != nil {
+				return nil, err
+			}
+
+			Cache.Put(key, co, time.Minute * 10)
+
+			return co, nil
+		}
+	}
+
+	return q.Get()
 }
 
 func (q *QueryBuilder) GetColumns() []string {

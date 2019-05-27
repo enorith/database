@@ -3,7 +3,10 @@ package rithdb
 import (
 	"database/sql"
 	"fmt"
+	"github.com/CaoJiayuan/gocache"
 )
+
+var Cache gocache.Repository
 
 func WithDefaultDrivers() {
 	registerDefaultDrivers()
