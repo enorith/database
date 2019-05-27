@@ -5,6 +5,7 @@ import (
 	env "github.com/CaoJiayuan/rithenv"
 	ev "github.com/CaoJiayuan/rithev"
 	"sync"
+	"errors"
 )
 
 type DriverRegister = func(config ConnectionConfig) (*sql.DB, error)
@@ -121,6 +122,50 @@ func (c *Connection) InsertGetId(sql string, bindings ...interface{}) (int64, er
 
 	return id, err
 }
+
+func (c *Connection) TransactionCall(handler func() error) error {
+	var err  error
+
+	db, dbErr := c.GetDB()
+	if dbErr != nil {
+		err = dbErr
+	} else  {
+		tx, txErr := db.Begin()
+		if txErr != nil {
+			err = txErr
+		} else {
+			err = c.callTxHandler(handler)
+			tx.Commit()
+			if err != nil {
+				tx.Rollback()
+			}
+		}
+	}
+
+
+	return err
+}
+
+
+func (c *Connection) callTxHandler(handler func() error) error {
+	var err error
+	defer func() {
+		if x := recover(); x != nil {
+			if e, ok := x.(error); ok {
+				err = e
+			}
+
+			if s, ok := x.(string); ok {
+				err = errors.New(s)
+			}
+		}
+	}()
+	err = handler()
+
+	return err
+}
+
+
 
 // Using known connection
 // well close current connection before use new connection
