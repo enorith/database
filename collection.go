@@ -247,10 +247,18 @@ func (c *Collection) Close() error {
 }
 
 func (c *Collection) Scan(dest ...interface{}) error {
+	if c.loaded {
+		return errors.New("loaded collection can not scan")
+	}
+
 	return c.iterator.Scan(dest...)
 }
 
 func (c *Collection) Next() bool {
+	if c.loaded {
+		return false
+	}
+
 	return c.iterator.Next()
 }
 
@@ -274,6 +282,10 @@ func (c *Collection) PluckInt(key string) []int64 {
 
 //NextAndScan recommend way to get row
 func (c *Collection) NextAndScan(dest ...interface{}) bool {
+	if c.loaded {
+		return false
+	}
+
 	return c.iterator.NextAndScan(dest...)
 }
 
