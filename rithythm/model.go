@@ -8,7 +8,7 @@ type DataModel interface {
 	GetTable() string
 	GetConnectionName() string
 	GetKeyName() string
-	unmarshal(data rithdb.CollectionItem)
+	Unmarshal(data rithdb.CollectionItem)
 	Clone() DataModel
     GetValue(field string) interface{}
 	GetString(field string) (string, error)
@@ -86,7 +86,7 @@ func (m *Model) GetUint(field string) (uint64, error) {
 	return m.item.GetUint(field)
 }
 
-func (m *Model) unmarshal(data rithdb.CollectionItem) {
+func (m *Model) Unmarshal(data rithdb.CollectionItem) {
 	m.item = data
 	m.valid = true
 }

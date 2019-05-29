@@ -32,6 +32,6 @@ func (c *RithythmCollection) GetItem(key int) DataModel {
 
 func ItemToModel(model DataModel, item rithdb.CollectionItem) DataModel {
 	m := model.Clone()
-	m.unmarshal(item)
+	m.Unmarshal(item)
 	return m
 }

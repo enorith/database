@@ -28,7 +28,7 @@ func (h *ModelHolder) Find(id int64, columns... string) DataModel {
 
 func (h *ModelHolder) Make(data map[string]interface{}) DataModel {
 
-	h.model.unmarshal(rithdb.NewCollectionItem(data))
+	h.model.Unmarshal(rithdb.NewCollectionItem(data))
 	return h.model
 }
 
