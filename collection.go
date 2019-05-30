@@ -18,6 +18,23 @@ type TypeParser func(row map[string]interface{}, field string, columnType *sql.C
 
 var DefaultTypeParser TypeParser = parseType
 
+type UndefinedItemKeyErr struct {
+	Key string
+}
+
+func (e UndefinedItemKeyErr) Error() string {
+	return fmt.Sprintf("collection item: undefined key [%s]", e.Key)
+}
+
+type InvalidItemValueTypeErr struct {
+	Key string
+	Kind string
+}
+
+func (e InvalidItemValueTypeErr) Error() string {
+	return fmt.Sprintf("collection item: try to get [%s] value from [%s]", e.Kind, e.Key)
+}
+
 type CollectionItem struct {
 	item  map[string]interface{}
 	valid bool
@@ -73,7 +90,7 @@ func (i *CollectionItem) GetInt(key string) (int64, error) {
 		if i, ok := v.(int64); ok {
 			return i, nil
 		} else {
-			return 0, errors.New(fmt.Sprintf("try to get int value from key [%s]", key))
+			return 0, InvalidItemValueTypeErr{Key:key, Kind: "int"}
 		}
 	}
 
@@ -86,7 +103,7 @@ func (i *CollectionItem) GetUint(key string) (uint64, error) {
 		if i, ok := v.(uint64); ok {
 			return i, nil
 		} else {
-			return 0, errors.New(fmt.Sprintf("try to get int value from key [%s]", key))
+			return 0, InvalidItemValueTypeErr{Key:key, Kind: "uint"}
 		}
 	}
 
@@ -99,7 +116,7 @@ func (i *CollectionItem) GetString(key string) (string, error) {
 		if s, ok := v.(string); ok {
 			return s, nil
 		} else {
-			return "", errors.New(fmt.Sprintf("try to get string value from key [%s]", key))
+			return "", InvalidItemValueTypeErr{Key:key, Kind: "uint"}
 		}
 	}
 
@@ -111,7 +128,7 @@ func (i *CollectionItem) GetValue(key string) (interface{}, error) {
 		return v, nil
 	}
 
-	return nil, errors.New(fmt.Sprintf("map key [%s] not exists", key))
+	return nil, UndefinedItemKeyErr{Key:key}
 }
 
 func sortLesser(i, j interface{}) bool {
