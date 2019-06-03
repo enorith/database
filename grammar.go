@@ -222,14 +222,6 @@ func WrapValue(value string) string {
 	return string(wrapBytes(b))
 }
 
-func wrap(v string) string {
-	if strings.Contains(v, ".") {
-		return fmt.Sprintf("`%s`", strings.Join(strings.SplitN(v, ".", 2), "`.`"))
-	}
-
-	return fmt.Sprintf("`%s`", v)
-}
-
 func Raw(value string) string {
 	return string(RawPrefix) + value
 }
