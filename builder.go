@@ -327,6 +327,7 @@ func (q *QueryBuilder) JoinWith(category, table string, handler JoinHandler) *Qu
 	handler(clause)
 
 	q.joins = append(q.joins, clause)
+	q.bindings = append(q.bindings, clause.bindings...)
 
 	return q
 }
