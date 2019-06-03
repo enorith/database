@@ -16,6 +16,8 @@ var (
 	whereColumn  = "c"
 )
 
+var DefaultPerPage = 15
+
 type QueryHandler func(builder *QueryBuilder)
 type JoinHandler func(clause *JoinClause)
 
@@ -349,6 +351,33 @@ func (q *QueryBuilder) GroupBy(columns ...string) *QueryBuilder {
 
 func (q *QueryBuilder) ForPage(page int, perPage int) *QueryBuilder {
 	return q.Offset((page - 1) * perPage).Take(perPage)
+}
+
+func (q *QueryBuilder) CountForPage(column ...string) int64 {
+	builder := q.Clone()
+	builder.limit = -1
+	builder.offset = -1
+	builder.groups = []string{}
+	builder.orders = [][2]string{}
+	return builder.Count()
+}
+
+
+func (q *QueryBuilder) Paginate(page, perPage int) *Paginator {
+	if page < 1 {
+		page = 1
+	}
+
+	if perPage < 1 {
+		perPage = DefaultPerPage
+	}
+
+	return &Paginator{
+		q,
+		page,
+		perPage,
+		-1,
+	}
 }
 
 func (q *QueryBuilder) ToSql() string {
