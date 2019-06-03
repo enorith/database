@@ -81,6 +81,9 @@ func (r *RithythmBuilder) First(columns... string) (DataModel, error) {
 	if err != nil {
 		return nil, err
 	}
+	if c.Len() < 1 {
+		return &Model{}, nil
+	}
 
 	first := c.First()
 	return ItemToModel(r.model, first), nil
