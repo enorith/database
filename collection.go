@@ -455,9 +455,9 @@ func parseType(item map[string]interface{}, field string, columnType *sql.Column
 			item[field] = integer
 		}
 
-	}  else if str.Contains(typeName, "CHAR", "TEXT", "TIMESTAMP", "DATE") {
+	}  else if str.Contains(typeName, "CHAR", "TEXT", "TIMESTAMP", "DATE", "TIME", "YEAR") {
 		item[field] = string(bytesData)
-	} else if str.Contains(typeName, "DECIMAL", "FLOAT") {
+	} else if str.Contains(typeName, "DECIMAL", "FLOAT", "DOUBLE") {
 		f, _ := strconv.ParseFloat(string(bytesData), 64)
 		item[field] = f
 	} else {
