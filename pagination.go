@@ -1,24 +1,26 @@
 package rithdb
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"math"
+)
 
 type Paginator struct {
 	builder *QueryBuilder
 	page    int
 	perPage int
 	total   int64
+	items   *Collection
 }
 
 func (p *Paginator) MarshalJSON() ([]byte, error) {
-	result, _ := p.builder.ForPage(p.page, p.perPage).Get()
-	data := map[string]interface{}{
-		"total": p.GetTotal(),
-		"page" : p.page,
-		"page_size" : p.perPage,
-		"data" : result,
+	result, err := p.ToResult()
+
+	if err != nil {
+		return nil, err
 	}
 
-	return json.Marshal(data)
+	return json.Marshal(result)
 }
 
 func (p *Paginator) GetTotal() int64 {
@@ -27,4 +29,48 @@ func (p *Paginator) GetTotal() int64 {
 	}
 
 	return p.total
+}
+
+func (p *Paginator) ToResult() (map[string]interface{}, error) {
+	result, err := p.Items()
+
+	if err != nil {
+		return nil, err
+	}
+
+	total := p.GetTotal()
+
+	lastPage := math.Ceil(float64(total) / float64(p.perPage))
+	data := map[string]interface{}{
+		"total":     total,
+		"page":      p.page,
+		"per_page":  p.perPage,
+		"data":      result,
+		"from":      p.firstIndex(),
+		"to":        p.lastIndex(),
+		"last_page": lastPage,
+	}
+
+	return data, nil
+}
+
+func (p *Paginator) firstIndex() int64 {
+	return int64((p.page-1)*p.perPage + 1)
+}
+
+func (p *Paginator) Items() (*Collection, error) {
+	if p.items != nil {
+		return p.items, nil
+	}
+
+	return p.builder.ForPage(p.page, p.perPage).Get()
+}
+
+func (p *Paginator) lastIndex() int64 {
+	items, err := p.Items()
+	if err != nil {
+		return 0
+	}
+
+	return p.firstIndex() + int64(items.Len()-1)
 }

@@ -357,9 +357,11 @@ func (q *QueryBuilder) CountForPage(column ...string) int64 {
 	builder := q.Clone()
 	builder.limit = -1
 	builder.offset = -1
-	builder.groups = []string{}
+	//builder.groups = []string{}
 	builder.orders = [][2]string{}
-	return builder.Count()
+	builder.Select(column...)
+	query := q.NewQuery()
+	return query.FromSub(builder, "page_count").Count(column...)
 }
 
 
@@ -377,6 +379,7 @@ func (q *QueryBuilder) Paginate(page, perPage int) *Paginator {
 		page,
 		perPage,
 		-1,
+		nil,
 	}
 }
 

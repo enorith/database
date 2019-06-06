@@ -375,6 +375,7 @@ func CollectRows(rows *sql.Rows) (*Collection, error) {
 
 	return &Collection{
 		iterator: ite,
+		items: []CollectionItem{},
 	}, nil
 }
 

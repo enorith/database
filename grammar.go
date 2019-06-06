@@ -64,7 +64,7 @@ func (g *SqlGrammar) CompileCount(s *QueryBuilder, column ...string) string {
 		col = "count(*) as `aggregate`"
 	}
 
-	return s.Select(col).ToSql()
+	return s.Select(Raw(col)).ToSql()
 }
 
 func (g *SqlGrammar) CompileInsertOne(table string, data map[string]interface{}) (sql string, bindings []interface{}) {
