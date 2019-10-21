@@ -42,13 +42,13 @@ func (p *Paginator) ToResult() (map[string]interface{}, error) {
 
 	lastPage := math.Ceil(float64(total) / float64(p.perPage))
 	data := map[string]interface{}{
-		"total":     total,
-		"page":      p.page,
-		"per_page":  p.perPage,
-		"data":      result,
-		"from":      p.firstIndex(),
-		"to":        p.lastIndex(),
-		"last_page": lastPage,
+		"total":        total,
+		"current_page": p.page,
+		"per_page":     p.perPage,
+		"data":         result,
+		"from":         p.firstIndex(),
+		"to":           p.lastIndex(),
+		"last_page":    lastPage,
 	}
 
 	return data, nil
@@ -62,8 +62,9 @@ func (p *Paginator) Items() (*Collection, error) {
 	if p.items != nil {
 		return p.items, nil
 	}
-
-	return p.builder.ForPage(p.page, p.perPage).Get()
+	var err error
+	p.items, err = p.builder.ForPage(p.page, p.perPage).Get()
+	return p.items, err
 }
 
 func (p *Paginator) lastIndex() int64 {

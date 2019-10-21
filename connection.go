@@ -6,6 +6,9 @@ import (
 	ev "github.com/CaoJiayuan/rithev"
 	"sync"
 	"errors"
+	"fmt"
+	"strings"
+	"time"
 )
 
 type DriverRegister = func(config ConnectionConfig) (*sql.DB, error)
@@ -40,10 +43,39 @@ type DBEvent struct {
 	Type string
 	Bindings []interface{}
 	Err error
+	Millisecond time.Duration
 }
 
 func (e *DBEvent) GetEventName() string {
 	return "rith::db"
+}
+
+func (e *DBEvent) GetRawSql() string {
+	sqlStr := e.Sql
+	for _, v := range e.Bindings {
+		var (
+			str string
+			format string
+		)
+		switch v.(type) {
+		case int:
+			format = "%d"
+			break
+		case int64:
+			format = "%d"
+			break
+		case uint64:
+			format = "%d"
+			break
+		case string:
+			format = "'%s'"
+			break
+		}
+		str = fmt.Sprintf(format, v)
+		sqlStr = strings.Replace(sqlStr, "?", str, 1)
+	}
+
+	return sqlStr
 }
 
 type ConnectionInterface interface {
@@ -83,12 +115,15 @@ func (c *Connection) Select(sql string, bindings ...interface{}) (*sql.Rows, err
 		return nil, err
 	}
 
+	startAt := time.Now().Nanosecond()
 	rows, queryErr := db.Query(sql, bindings...)
+	millisecond := time.Duration(time.Now().Nanosecond() - startAt) / time.Millisecond
 	ev.BUS.Dispatch(&DBEvent{
 		Sql: sql,
 		Type:"select",
 		Err: queryErr,
 		Bindings: bindings,
+		Millisecond: millisecond,
 	})
 
 	return rows, queryErr
