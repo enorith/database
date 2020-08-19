@@ -2,8 +2,8 @@ package rithythm
 
 import (
 	"github.com/CaoJiayuan/rithdb"
+	"time"
 )
-
 
 var config rithdb.Config
 
@@ -17,7 +17,7 @@ func (r *RithythmBuilder) SetModel(model DataModel) *RithythmBuilder {
 	return r
 }
 
-func (r *RithythmBuilder) Select(columns... string) *RithythmBuilder {
+func (r *RithythmBuilder) Select(columns ...string) *RithythmBuilder {
 	r.QueryBuilder.Select(columns...)
 	return r
 }
@@ -57,7 +57,7 @@ func (r *RithythmBuilder) ForPage(page int, perPage int) *RithythmBuilder {
 	return r
 }
 
-func (r *RithythmBuilder) Get(columns... string) (*RithythmCollection, error) {
+func (r *RithythmBuilder) Get(columns ...string) (*RithythmCollection, error) {
 	c, err := r.QueryBuilder.Get(columns...)
 
 	if err != nil {
@@ -66,7 +66,7 @@ func (r *RithythmBuilder) Get(columns... string) (*RithythmCollection, error) {
 	return CollectFromBase(c, r.model), err
 }
 
-func (r *RithythmBuilder) GetRaw(query string, bindings... interface{}) (*RithythmCollection, error) {
+func (r *RithythmBuilder) GetRaw(query string, bindings ...interface{}) (*RithythmCollection, error) {
 	c, err := r.QueryBuilder.GetRaw(query, bindings...)
 
 	if err != nil {
@@ -75,7 +75,7 @@ func (r *RithythmBuilder) GetRaw(query string, bindings... interface{}) (*Rithyt
 	return CollectFromBase(c, r.model), nil
 }
 
-func (r *RithythmBuilder) First(columns... string) (DataModel, error) {
+func (r *RithythmBuilder) First(columns ...string) (DataModel, error) {
 	c, err := r.Take(1).Get(columns...)
 
 	if err != nil {
@@ -89,16 +89,22 @@ func (r *RithythmBuilder) First(columns... string) (DataModel, error) {
 	return ItemToModel(r.model, first), nil
 }
 
-func (r *RithythmBuilder) Find(id int64, columns... string) (DataModel, error) {
+func (r *RithythmBuilder) Find(id int64, columns ...string) (DataModel, error) {
 	first, err := r.Where(r.model.GetKeyName(), "=", id, true).First(columns...)
 
 	if err != nil {
-		return  nil, err
+		return nil, err
 	}
 
 	return first, nil
 }
 
-func Config(c rithdb.Config)  {
+func (q *RithythmBuilder) Remember(key string, d time.Duration) (*RithythmCollection, error) {
+	col, err := q.QueryBuilder.Remember(key, d)
+
+	return CollectFromBase(col, q.model), err
+}
+
+func Config(c rithdb.Config) {
 	config = c
 }

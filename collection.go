@@ -6,14 +6,15 @@ import (
 	"errors"
 	"fmt"
 	"github.com/CaoJiayuan/goutilities/str"
-	"strconv"
 	"reflect"
 	"sort"
+	"strconv"
 )
 
 type ItemHolder func(item CollectionItem, index int)
 type ItemFilter func(item CollectionItem, index int) bool
 
+//TypeParser parse database field types
 type TypeParser func(row map[string]interface{}, field string, columnType *sql.ColumnType, bytesData []byte)
 
 var DefaultTypeParser TypeParser = parseType
@@ -27,7 +28,7 @@ func (e UndefinedItemKeyErr) Error() string {
 }
 
 type InvalidItemValueTypeErr struct {
-	Key string
+	Key  string
 	Kind string
 }
 
@@ -90,7 +91,7 @@ func (i *CollectionItem) GetInt(key string) (int64, error) {
 		if i, ok := v.(int64); ok {
 			return i, nil
 		} else {
-			return 0, InvalidItemValueTypeErr{Key:key, Kind: "int"}
+			return 0, InvalidItemValueTypeErr{Key: key, Kind: "int"}
 		}
 	}
 
@@ -103,7 +104,7 @@ func (i *CollectionItem) GetUint(key string) (uint64, error) {
 		if i, ok := v.(uint64); ok {
 			return i, nil
 		} else {
-			return 0, InvalidItemValueTypeErr{Key:key, Kind: "uint"}
+			return 0, InvalidItemValueTypeErr{Key: key, Kind: "uint"}
 		}
 	}
 
@@ -116,7 +117,7 @@ func (i *CollectionItem) GetString(key string) (string, error) {
 		if s, ok := v.(string); ok {
 			return s, nil
 		} else {
-			return "", InvalidItemValueTypeErr{Key:key, Kind: "uint"}
+			return "", InvalidItemValueTypeErr{Key: key, Kind: "uint"}
 		}
 	}
 
@@ -128,7 +129,7 @@ func (i *CollectionItem) GetValue(key string) (interface{}, error) {
 		return v, nil
 	}
 
-	return nil, UndefinedItemKeyErr{Key:key}
+	return nil, UndefinedItemKeyErr{Key: key}
 }
 
 func sortLesser(i, j interface{}) bool {
@@ -150,7 +151,7 @@ type Collection struct {
 	items    []CollectionItem
 	iterator *RowsIterator
 	loaded   bool
-	sortBy string
+	sortBy   string
 	sortDesc bool
 }
 
@@ -159,8 +160,8 @@ func (c *Collection) Len() int {
 }
 
 func (c *Collection) Less(i, j int) bool {
-	ivd,_ := c.items[i].GetValue(c.sortBy)
-	jvd,_ := c.items[j].GetValue(c.sortBy)
+	ivd, _ := c.items[i].GetValue(c.sortBy)
+	jvd, _ := c.items[j].GetValue(c.sortBy)
 	if c.sortDesc {
 		return !sortLesser(ivd, jvd)
 	}
@@ -375,7 +376,7 @@ func CollectRows(rows *sql.Rows) (*Collection, error) {
 
 	return &Collection{
 		iterator: ite,
-		items: []CollectionItem{},
+		items:    []CollectionItem{},
 	}, nil
 }
 
@@ -449,14 +450,14 @@ func parseType(item map[string]interface{}, field string, columnType *sql.Column
 		}
 
 		if unsigned {
-			unsignedInt,_ := strconv.ParseUint(strData, 10, size)
+			unsignedInt, _ := strconv.ParseUint(strData, 10, size)
 			item[field] = unsignedInt
-		} else  {
-			integer,_ := strconv.ParseInt(strData, 10, size)
+		} else {
+			integer, _ := strconv.ParseInt(strData, 10, size)
 			item[field] = integer
 		}
 
-	}  else if str.Contains(typeName, "CHAR", "TEXT", "TIMESTAMP", "DATE", "TIME", "YEAR") {
+	} else if str.Contains(typeName, "CHAR", "TEXT", "TIMESTAMP", "DATE", "TIME", "YEAR") {
 		item[field] = string(bytesData)
 	} else if str.Contains(typeName, "DECIMAL", "FLOAT", "DOUBLE") {
 		f, _ := strconv.ParseFloat(string(bytesData), 64)

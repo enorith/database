@@ -2,12 +2,12 @@ package rithdb
 
 import (
 	"database/sql"
-	env "github.com/CaoJiayuan/rithenv"
-	ev "github.com/CaoJiayuan/rithev"
-	"sync"
 	"errors"
 	"fmt"
+	env "github.com/CaoJiayuan/rithenv"
+	ev "github.com/CaoJiayuan/rithev"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -20,8 +20,8 @@ var Conns Connections
 var openDBs *OpenDBs
 
 type OpenDBs struct {
-	opened  map[string]*sql.DB
-	m sync.RWMutex
+	opened map[string]*sql.DB
+	m      sync.RWMutex
 }
 
 func (d *OpenDBs) Get(name string) (*sql.DB, bool) {
@@ -39,10 +39,10 @@ func (d *OpenDBs) Put(name string, db *sql.DB) {
 
 type DBEvent struct {
 	ev.Event
-	Sql string
-	Type string
-	Bindings []interface{}
-	Err error
+	Sql         string
+	Type        string
+	Bindings    []interface{}
+	Err         error
 	Millisecond time.Duration
 }
 
@@ -54,7 +54,7 @@ func (e *DBEvent) GetRawSql() string {
 	sqlStr := e.Sql
 	for _, v := range e.Bindings {
 		var (
-			str string
+			str    string
 			format string
 		)
 		switch v.(type) {
@@ -105,6 +105,12 @@ func (c *Connection) Close() error {
 	return nil
 }
 
+func (c *Connection) Configure(cfg Config) *Connection {
+	c.config = cfg
+
+	return c
+}
+
 func (c *Connection) Clone() *Connection {
 	return NewConnection(c.connection, c.config)
 }
@@ -117,12 +123,12 @@ func (c *Connection) Select(sql string, bindings ...interface{}) (*sql.Rows, err
 
 	startAt := time.Now().Nanosecond()
 	rows, queryErr := db.Query(sql, bindings...)
-	millisecond := time.Duration(time.Now().Nanosecond() - startAt) / time.Millisecond
+	millisecond := time.Duration(time.Now().Nanosecond()-startAt) / time.Millisecond
 	ev.BUS.Dispatch(&DBEvent{
-		Sql: sql,
-		Type:"select",
-		Err: queryErr,
-		Bindings: bindings,
+		Sql:         sql,
+		Type:        "select",
+		Err:         queryErr,
+		Bindings:    bindings,
 		Millisecond: millisecond,
 	})
 
@@ -138,9 +144,9 @@ func (c *Connection) Exec(sql string, bindings ...interface{}) (sql.Result, erro
 	result, queryErr := db.Exec(sql, bindings...)
 
 	ev.BUS.Dispatch(&DBEvent{
-		Sql: sql,
-		Type: "exec",
-		Err: queryErr,
+		Sql:      sql,
+		Type:     "exec",
+		Err:      queryErr,
 		Bindings: bindings,
 	})
 
@@ -153,18 +159,18 @@ func (c *Connection) InsertGetId(sql string, bindings ...interface{}) (int64, er
 		return 0, execErr
 	}
 
-	id,err := result.LastInsertId()
+	id, err := result.LastInsertId()
 
 	return id, err
 }
 
 func (c *Connection) TransactionCall(handler func() error) error {
-	var err  error
+	var err error
 
 	db, dbErr := c.GetDB()
 	if dbErr != nil {
 		err = dbErr
-	} else  {
+	} else {
 		tx, txErr := db.Begin()
 		if txErr != nil {
 			err = txErr
@@ -177,10 +183,8 @@ func (c *Connection) TransactionCall(handler func() error) error {
 		}
 	}
 
-
 	return err
 }
-
 
 func (c *Connection) callTxHandler(handler func() error) error {
 	var err error
@@ -199,8 +203,6 @@ func (c *Connection) callTxHandler(handler func() error) error {
 
 	return err
 }
-
-
 
 // Using known connection
 // well close current connection before use new connection
