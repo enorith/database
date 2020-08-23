@@ -50,16 +50,6 @@ func (i *CollectionItem) UnmarshalFromCache(decoder func(value interface{}) bool
 	return i.valid
 }
 
-func (i *CollectionItem) ToJson() []byte {
-	j, err := i.MarshalJSON()
-
-	if err != nil {
-		panic(err)
-	}
-
-	return j
-}
-
 func (i *CollectionItem) MarshalJSON() ([]byte, error) {
 	return json.Marshal(i.item)
 }
@@ -201,16 +191,6 @@ func (c *Collection) UnmarshalFromCache(decoder func(value interface{}) bool) bo
 func (c *Collection) MarshalJSON() ([]byte, error) {
 	c.loadAll()
 	return json.Marshal(c.items)
-}
-
-func (c *Collection) ToJson() []byte {
-	j, err := c.MarshalJSON()
-
-	if err != nil {
-		panic(err)
-	}
-
-	return j
 }
 
 func (c *Collection) GetItem(key int) CollectionItem {
