@@ -192,7 +192,7 @@ func (q *QueryBuilder) FromSub(builder *QueryBuilder, as string) *QueryBuilder {
 	return q
 }
 
-func (q *QueryBuilder) GetRaw(query string, bindings ... interface{}) (*Collection, error) {
+func (q *QueryBuilder) GetRaw(query string, bindings ...interface{}) (*Collection, error) {
 
 	rows, err := q.connection.Select(query, bindings...)
 
@@ -203,7 +203,7 @@ func (q *QueryBuilder) GetRaw(query string, bindings ... interface{}) (*Collecti
 	return CollectRows(rows)
 }
 
-func (q *QueryBuilder) Get(columns ... string) (*Collection, error) {
+func (q *QueryBuilder) Get(columns ...string) (*Collection, error) {
 	if len(q.columns) < 1 {
 		q.columns = columns
 	}
@@ -211,7 +211,7 @@ func (q *QueryBuilder) Get(columns ... string) (*Collection, error) {
 	return q.GetRaw(q.ToSql(), q.FlatBindings()...)
 }
 
-func (q *QueryBuilder) GetRows(columns ... string) (*RowsIterator, error) {
+func (q *QueryBuilder) GetRows(columns ...string) (*RowsIterator, error) {
 	if len(q.columns) < 1 {
 		q.columns = columns
 	}
@@ -237,10 +237,10 @@ func (q *QueryBuilder) SortAsc(by string) *QueryBuilder {
 	return q.Sort(by, "asc")
 }
 
-func (q *QueryBuilder) First(columns ... string) (CollectionItem, error) {
+func (q *QueryBuilder) First(columns ...string) (*CollectionItem, error) {
 	coll, err := q.Take(1).Get(columns...)
 	if err != nil {
-		return CollectionItem{}, err
+		return &CollectionItem{}, err
 	}
 
 	return coll.First(), nil
@@ -262,12 +262,12 @@ func (q *QueryBuilder) FlatBindings() []interface{} {
 	return value
 }
 
-func (q *QueryBuilder) Create(attributes map[string]interface{}, key ...string) (CollectionItem, error) {
+func (q *QueryBuilder) Create(attributes map[string]interface{}, key ...string) (*CollectionItem, error) {
 	sql, bindings := q.connection.grammar.CompileInsertOne(q.from, attributes)
 
 	id, err := q.connection.InsertGetId(sql, bindings...)
 	if err != nil {
-		return CollectionItem{}, err
+		return &CollectionItem{}, err
 	}
 	var primary string
 
@@ -281,13 +281,13 @@ func (q *QueryBuilder) Create(attributes map[string]interface{}, key ...string) 
 
 	found, findErr := q.AndWhere(primary, "=", id).First()
 	if findErr != nil {
-		return CollectionItem{}, err
+		return &CollectionItem{}, err
 	}
 
 	return found, nil
 }
 
-func (q *QueryBuilder) Select(columns ... string) *QueryBuilder {
+func (q *QueryBuilder) Select(columns ...string) *QueryBuilder {
 	q.columns = columns
 	return q
 }
@@ -364,7 +364,6 @@ func (q *QueryBuilder) CountForPage(column ...string) int64 {
 	return query.FromSub(builder, "page_count").Count(column...)
 }
 
-
 func (q *QueryBuilder) Paginate(page, perPage int) *Paginator {
 	if page < 1 {
 		page = 1
@@ -400,7 +399,7 @@ func (q *QueryBuilder) Remember(key string, d time.Duration) (*Collection, error
 				return nil, err
 			}
 
-			Cache.Put(key, co, time.Minute * 10)
+			Cache.Put(key, co, time.Minute*10)
 
 			return co, nil
 		}

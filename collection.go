@@ -11,8 +11,8 @@ import (
 	"strconv"
 )
 
-type ItemHolder func(item CollectionItem, index int)
-type ItemFilter func(item CollectionItem, index int) bool
+type ItemHolder func(item *CollectionItem, index int)
+type ItemFilter func(item *CollectionItem, index int) bool
 
 //TypeParser parse database field types
 type TypeParser func(row map[string]interface{}, field string, columnType *sql.ColumnType, bytesData []byte)
@@ -138,7 +138,7 @@ func sortLesser(i, j interface{}) bool {
 
 //Collection is database rows collection
 type Collection struct {
-	items    []CollectionItem
+	items    []*CollectionItem
 	iterator *RowsIterator
 	loaded   bool
 	sortBy   string
@@ -177,7 +177,7 @@ func (c *Collection) UnmarshalFromCache(decoder func(value interface{}) bool) bo
 	var data []map[string]interface{}
 	ok := decoder(&data)
 	if ok {
-		var result []CollectionItem
+		var result []*CollectionItem
 		for _, v := range data {
 			result = append(result, NewCollectionItem(v))
 		}
@@ -193,10 +193,10 @@ func (c *Collection) MarshalJSON() ([]byte, error) {
 	return json.Marshal(c.items)
 }
 
-func (c *Collection) GetItem(key int) CollectionItem {
+func (c *Collection) GetItem(key int) *CollectionItem {
 	c.loadAll()
 	if len(c.items) < 1 {
-		return CollectionItem{}
+		return &CollectionItem{}
 	}
 
 	return c.items[key]
@@ -227,11 +227,11 @@ func (c *Collection) Each(resolver ItemHolder) {
 	}
 }
 
-func (c *Collection) First() CollectionItem {
+func (c *Collection) First() *CollectionItem {
 	return c.GetItem(0)
 }
 
-func (c *Collection) GetItems() []CollectionItem {
+func (c *Collection) GetItems() []*CollectionItem {
 	c.loadAll()
 	return c.items
 }
@@ -262,7 +262,7 @@ func (c *Collection) Next() bool {
 
 func (c *Collection) Pluck(key string) []interface{} {
 	var result []interface{}
-	c.Each(func(item CollectionItem, index int) {
+	c.Each(func(item *CollectionItem, index int) {
 		v, _ := item.GetValue(key)
 		result = append(result, v)
 	})
@@ -271,7 +271,7 @@ func (c *Collection) Pluck(key string) []interface{} {
 
 func (c *Collection) PluckInt(key string) []int64 {
 	var result []int64
-	c.Each(func(item CollectionItem, index int) {
+	c.Each(func(item *CollectionItem, index int) {
 		v, _ := item.GetInt(key)
 		result = append(result, v)
 	})
@@ -287,8 +287,8 @@ func (c *Collection) NextAndScan(dest ...interface{}) bool {
 	return c.iterator.NextAndScan(dest...)
 }
 
-func (c *Collection) Read() CollectionItem {
-	return CollectionItem{c.iterator.Read(), true}
+func (c *Collection) Read() *CollectionItem {
+	return &CollectionItem{c.iterator.Read(), true}
 }
 
 func (c *Collection) loadAll() bool {
@@ -356,7 +356,7 @@ func CollectRows(rows *sql.Rows) (*Collection, error) {
 
 	return &Collection{
 		iterator: ite,
-		items:    []CollectionItem{},
+		items:    []*CollectionItem{},
 	}, nil
 }
 
@@ -379,8 +379,8 @@ func NewRowsIterator(rows *sql.Rows) (*RowsIterator, error) {
 	}, err
 }
 
-func NewCollectionItem(data map[string]interface{}) CollectionItem {
-	return CollectionItem{data, true}
+func NewCollectionItem(data map[string]interface{}) *CollectionItem {
+	return &CollectionItem{data, true}
 }
 
 func parseType(item map[string]interface{}, field string, columnType *sql.ColumnType, bytesData []byte) {

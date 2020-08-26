@@ -8,9 +8,9 @@ type DataModel interface {
 	GetTable() string
 	GetConnectionName() string
 	GetKeyName() string
-	Unmarshal(data rithdb.CollectionItem)
+	Unmarshal(data *rithdb.CollectionItem)
 	Clone() DataModel
-    GetValue(field string) interface{}
+	GetValue(field string) interface{}
 	GetString(field string) (string, error)
 	GetInt(field string) (int64, error)
 	GetUint(field string) (uint64, error)
@@ -22,7 +22,7 @@ type DataModel interface {
 }
 
 type Model struct {
-	item rithdb.CollectionItem
+	item  *rithdb.CollectionItem
 	valid bool
 }
 
@@ -31,10 +31,10 @@ func (m *Model) MarshalToCache() interface{} {
 }
 
 func (m *Model) UnmarshalFromCache(decoder func(value interface{}) bool) bool {
-	 var data map[string]interface{}
-	 m.valid = decoder(&data)
-	 m.item = rithdb.NewCollectionItem(data)
-	 return m.valid
+	var data map[string]interface{}
+	m.valid = decoder(&data)
+	m.item = rithdb.NewCollectionItem(data)
+	return m.valid
 }
 
 func (m *Model) MarshalJSON() ([]byte, error) {
@@ -66,7 +66,7 @@ func (m *Model) GetKeyName() string {
 }
 
 func (m *Model) GetValue(field string) interface{} {
-	v,err := m.item.GetValue(field)
+	v, err := m.item.GetValue(field)
 	if err != nil {
 		return nil
 	}
@@ -86,7 +86,7 @@ func (m *Model) GetUint(field string) (uint64, error) {
 	return m.item.GetUint(field)
 }
 
-func (m *Model) Unmarshal(data rithdb.CollectionItem) {
+func (m *Model) Unmarshal(data *rithdb.CollectionItem) {
 	m.item = data
 	m.valid = true
 }
