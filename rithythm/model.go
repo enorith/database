@@ -2,11 +2,17 @@ package rithythm
 
 import (
 	"github.com/CaoJiayuan/rithdb"
+	"reflect"
 )
 
 type RelationModel interface {
 	DataModel
 	Relations() map[string]Relation
+}
+
+type KeyKindModel interface {
+	DataModel
+	KeyKind() reflect.Kind
 }
 
 type DataModel interface {

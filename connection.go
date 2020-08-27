@@ -43,7 +43,7 @@ type DBEvent struct {
 	Type        string
 	Bindings    []interface{}
 	Err         error
-	Millisecond time.Duration
+	Microsecond time.Duration
 }
 
 func (e *DBEvent) GetEventName() string {
@@ -123,13 +123,14 @@ func (c *Connection) Select(sql string, bindings ...interface{}) (*sql.Rows, err
 
 	startAt := time.Now().Nanosecond()
 	rows, queryErr := db.Query(sql, bindings...)
-	millisecond := time.Duration(time.Now().Nanosecond()-startAt) / time.Millisecond
+	microsecond := time.Duration(time.Now().Nanosecond()-startAt) / time.Microsecond
+
 	ev.BUS.Dispatch(&DBEvent{
 		Sql:         sql,
 		Type:        "select",
 		Err:         queryErr,
 		Bindings:    bindings,
-		Millisecond: millisecond,
+		Microsecond: microsecond,
 	})
 
 	return rows, queryErr
