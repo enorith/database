@@ -1,6 +1,6 @@
 module github.com/CaoJiayuan/rithdb
 
-go 1.15
+go 1.13
 
 require (
 	github.com/CaoJiayuan/gocache v0.0.0-20190529112516-fc1b604cdd90
