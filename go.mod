@@ -9,6 +9,7 @@ require (
 	github.com/CaoJiayuan/rithev v0.0.0-20190520072613-27ff2c60939d
 	github.com/go-redis/cache v6.4.0+incompatible // indirect
 	github.com/go-redis/redis v6.15.9+incompatible // indirect
+	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/onsi/ginkgo v1.14.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
