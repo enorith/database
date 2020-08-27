@@ -4,6 +4,11 @@ import (
 	"github.com/CaoJiayuan/rithdb"
 )
 
+type RelationModel interface {
+	DataModel
+	Relations() map[string]Relation
+}
+
 type DataModel interface {
 	GetTable() string
 	GetConnectionName() string
@@ -19,6 +24,7 @@ type DataModel interface {
 	IsValid() bool
 	MarshalToCache() interface{}
 	UnmarshalFromCache(decoder func(value interface{}) bool) bool
+	Query() *RithythmBuilder
 }
 
 type Model struct {
@@ -89,6 +95,10 @@ func (m *Model) GetUint(field string) (uint64, error) {
 func (m *Model) Unmarshal(data *rithdb.CollectionItem) {
 	m.item = data
 	m.valid = true
+}
+
+func (m *Model) Query() *RithythmBuilder {
+	return Hold(m).Query()
 }
 
 func Hold(m DataModel) *ModelHolder {

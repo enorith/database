@@ -211,7 +211,7 @@ func (q *QueryBuilder) Get(columns ...string) (*Collection, error) {
 	return q.GetRaw(q.ToSql(), q.FlatBindings()...)
 }
 
-func (q *QueryBuilder) GetRows(columns ...string) (*RowsIterator, error) {
+func (q *QueryBuilder) GetRowsIterator(columns ...string) (*RowsIterator, error) {
 	if len(q.columns) < 1 {
 		q.columns = columns
 	}

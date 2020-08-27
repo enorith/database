@@ -122,6 +122,10 @@ func (i *CollectionItem) GetValue(key string) (interface{}, error) {
 	return nil, UndefinedItemKeyErr{Key: key}
 }
 
+func (i *CollectionItem) Set(key string, v interface{}) {
+	i.item[key] = v
+}
+
 func sortLesser(i, j interface{}) bool {
 	switch i.(type) {
 	case uint64:
@@ -202,6 +206,12 @@ func (c *Collection) GetItem(key int) *CollectionItem {
 	return c.items[key]
 }
 
+func (c *Collection) Append(i *CollectionItem) *Collection {
+	c.items = append(c.items, i)
+
+	return c
+}
+
 func (c *Collection) SortBy(by string, desc bool) *Collection {
 
 	cs := c.Clone()
@@ -273,6 +283,15 @@ func (c *Collection) PluckInt(key string) []int64 {
 	var result []int64
 	c.Each(func(item *CollectionItem, index int) {
 		v, _ := item.GetInt(key)
+		result = append(result, v)
+	})
+	return result
+}
+
+func (c *Collection) PluckUInt(key string) []uint64 {
+	var result []uint64
+	c.Each(func(item *CollectionItem, index int) {
+		v, _ := item.GetUint(key)
 		result = append(result, v)
 	})
 	return result
@@ -381,6 +400,10 @@ func NewRowsIterator(rows *sql.Rows) (*RowsIterator, error) {
 
 func NewCollectionItem(data map[string]interface{}) *CollectionItem {
 	return &CollectionItem{data, true}
+}
+
+func NewCollectionEmpty() *Collection {
+	return &Collection{items: []*CollectionItem{}, loaded: true}
 }
 
 func parseType(item map[string]interface{}, field string, columnType *sql.ColumnType, bytesData []byte) {

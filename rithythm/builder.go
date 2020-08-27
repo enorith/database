@@ -10,6 +10,12 @@ var config rithdb.Config
 type RithythmBuilder struct {
 	*rithdb.QueryBuilder
 	model DataModel
+	loads []string
+}
+
+func (r *RithythmBuilder) With(loads ...string) *RithythmBuilder {
+	r.loads = loads
+	return r
 }
 
 func (r *RithythmBuilder) SetModel(model DataModel) *RithythmBuilder {
@@ -24,6 +30,11 @@ func (r *RithythmBuilder) Select(columns ...string) *RithythmBuilder {
 
 func (r *RithythmBuilder) Where(column, operator string, value interface{}, and bool) *RithythmBuilder {
 	r.QueryBuilder.Where(column, operator, value, and)
+	return r
+}
+
+func (r *RithythmBuilder) WhereIn(column string, value []interface{}, and bool) *RithythmBuilder {
+	r.QueryBuilder.WhereIn(column, value, and)
 	return r
 }
 
@@ -63,7 +74,41 @@ func (r *RithythmBuilder) Get(columns ...string) (*RithythmCollection, error) {
 	if err != nil {
 		return nil, err
 	}
-	return CollectFromBase(c, r.model), err
+	data := CollectFromBase(c, r.model)
+
+	if m, ok := r.model.(RelationModel); ok {
+		r.eagerLoad(data, m)
+	}
+
+	return data, nil
+}
+
+func (r *RithythmBuilder) eagerLoad(data *RithythmCollection, model RelationModel) {
+
+	data.GetItems()
+	relations := map[string]Relation{}
+	for _, l := range r.loads {
+		rs := model.Relations()
+		if rel, ok := rs[l]; ok {
+			rel.SetData(data)
+			relations[l] = rel
+		}
+	}
+
+	data.Each(func(item *rithdb.CollectionItem, index int) {
+		for k, v := range relations {
+			model := ItemToModel(model, item)
+			if re, ok := v.(RelationOne); ok {
+				data := v.RelateTo()
+				re.MatchMarshal(model, data)
+				item.Set(k, data)
+			} else if re, ok := v.(RelationMany); ok {
+				data := NewCollectionEmpty(v.RelateTo())
+				re.MatchMarshal(model, data)
+				item.Set(k, data)
+			}
+		}
+	})
 }
 
 func (r *RithythmBuilder) GetRaw(query string, bindings ...interface{}) (*RithythmCollection, error) {
@@ -99,10 +144,10 @@ func (r *RithythmBuilder) Find(id int64, columns ...string) (DataModel, error) {
 	return first, nil
 }
 
-func (q *RithythmBuilder) Remember(key string, d time.Duration) (*RithythmCollection, error) {
-	col, err := q.QueryBuilder.Remember(key, d)
+func (r *RithythmBuilder) Remember(key string, d time.Duration) (*RithythmCollection, error) {
+	col, err := r.QueryBuilder.Remember(key, d)
 
-	return CollectFromBase(col, q.model), err
+	return CollectFromBase(col, r.model), err
 }
 
 func Config(c rithdb.Config) {

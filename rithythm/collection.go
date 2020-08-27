@@ -30,6 +30,10 @@ func (c *RithythmCollection) GetItem(key int) DataModel {
 	return ItemToModel(c.model, c.Collection.GetItem(key))
 }
 
+func NewCollectionEmpty(model DataModel) *RithythmCollection {
+	return CollectFromBase(rithdb.NewCollectionEmpty(), model)
+}
+
 func ItemToModel(model DataModel, item *rithdb.CollectionItem) DataModel {
 	m := model.Clone()
 	m.Unmarshal(item)

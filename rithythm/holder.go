@@ -20,7 +20,11 @@ func (h *ModelHolder) Query() *RithythmBuilder {
 	return b.SetModel(h.model)
 }
 
-func (h *ModelHolder) Find(id int64, columns... string) DataModel {
+func (h *ModelHolder) With(loads ...string) *RithythmBuilder {
+	return h.Query().With(loads...)
+}
+
+func (h *ModelHolder) Find(id int64, columns ...string) DataModel {
 	m, err := h.Query().Find(id, columns...)
 	if err != nil || m == nil {
 		return &Model{
@@ -30,7 +34,6 @@ func (h *ModelHolder) Find(id int64, columns... string) DataModel {
 
 	return m
 }
-
 
 func (h *ModelHolder) Make(data map[string]interface{}) DataModel {
 
