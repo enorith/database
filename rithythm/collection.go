@@ -35,7 +35,7 @@ func NewCollectionEmpty(model DataModel) *RithythmCollection {
 }
 
 func ItemToModel(model DataModel, item *rithdb.CollectionItem) DataModel {
-	m := model.Clone()
+	m := model.New()
 	m.Unmarshal(item)
 
 	return m

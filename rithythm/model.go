@@ -14,7 +14,7 @@ type DataModel interface {
 	GetConnectionName() string
 	GetKeyName() string
 	Unmarshal(data *rithdb.CollectionItem)
-	Clone() DataModel
+	New() DataModel
 	GetValue(field string) interface{}
 	GetString(field string) (string, error)
 	GetInt(field string) (int64, error)
@@ -55,8 +55,8 @@ func (m *Model) GetTable() string {
 	panic("GetTable: not implemented")
 }
 
-func (m *Model) Clone() DataModel {
-	panic("Clone: not implemented")
+func (m *Model) New() DataModel {
+	panic("New: not implemented")
 }
 
 func (m *Model) IsValid() bool {
