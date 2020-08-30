@@ -1,10 +1,10 @@
 package rithdb
 
 import (
-	"fmt"
-	"strings"
-	"github.com/CaoJiayuan/goutilities/str"
 	"bytes"
+	"fmt"
+	"github.com/CaoJiayuan/goutilities/str"
+	"strings"
 )
 
 var grammars map[string]Grammar
