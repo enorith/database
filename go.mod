@@ -5,8 +5,8 @@ go 1.13
 require (
 	github.com/CaoJiayuan/gocache v0.0.0-20190529112516-fc1b604cdd90
 	github.com/CaoJiayuan/goutilities v0.0.0-20190531120433-c0d9cccb21b4
-	github.com/CaoJiayuan/rithev v0.0.0-20190520072613-27ff2c60939d
 	github.com/enorith/environment v0.0.1
+	github.com/enorith/event v0.0.2
 	github.com/go-redis/cache v6.4.0+incompatible // indirect
 	github.com/go-redis/redis v6.15.9+incompatible // indirect
 	github.com/jinzhu/inflection v1.0.0

@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	ev "github.com/CaoJiayuan/rithev"
 	env "github.com/enorith/environment"
+	ev "github.com/enorith/event"
 )
 
 type DriverRegister = func(config ConnectionConfig) (*sql.DB, error)
