@@ -1,4 +1,4 @@
-module github.com/CaoJiayuan/rithdb
+module github.com/CaoJiayuan/database
 
 go 1.13
 

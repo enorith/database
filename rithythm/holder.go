@@ -1,7 +1,7 @@
 package rithythm
 
 import (
-	"github.com/CaoJiayuan/rithdb"
+	"github.com/CaoJiayuan/database"
 )
 
 type ModelHolder struct {
@@ -14,8 +14,8 @@ func (h *ModelHolder) Query() *RithythmBuilder {
 	if len(name) < 1 {
 		name = config.Default
 	}
-	connection := rithdb.NewConnection(name, config)
-	b.QueryBuilder = rithdb.NewBuilder(connection)
+	connection := database.NewConnection(name, config)
+	b.QueryBuilder = database.NewBuilder(connection)
 	b.From(h.model.GetTable())
 	return b.SetModel(h.model)
 }
@@ -37,7 +37,7 @@ func (h *ModelHolder) Find(id int64, columns ...string) DataModel {
 
 func (h *ModelHolder) Make(data map[string]interface{}) DataModel {
 
-	h.model.Unmarshal(rithdb.NewCollectionItem(data))
+	h.model.Unmarshal(database.NewCollectionItem(data))
 	return h.model
 }
 

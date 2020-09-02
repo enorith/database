@@ -1,4 +1,4 @@
-package rithdb
+package database
 
 type ConnectionConfig struct {
 	Driver   string `yaml:"driver"`

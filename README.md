@@ -8,9 +8,9 @@ package main
 
 import (
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/CaoJiayuan/rithdb"
+	"github.com/CaoJiayuan/database"
 	"fmt"
-	"github.com/CaoJiayuan/rithdb/rithythm"
+	"github.com/CaoJiayuan/database/rithythm"
 )
 
 
@@ -28,13 +28,13 @@ func (u *User) Clone() rithythm.DataModel {
 
 func main()  {
     builder := rithythm.Hold(&User{}).Query().GroupBy("area_id").
-        JoinWith("inner", "areas", func(clause *rithdb.JoinClause) {
+        JoinWith("inner", "areas", func(clause *database.JoinClause) {
         clause.AndOn("area_id", "=", "areas.id")
         clause.AndWhereNotNull("area_id")
-    }).AndWhereNest(func(builder *rithdb.QueryBuilder) {
+    }).AndWhereNest(func(builder *database.QueryBuilder) {
         builder.AndWhere("users.id", ">", 12)
     }).
-        Select(rithdb.Raw("count(users.id) as users_count"), "area_id", "areas.name").
+        Select(database.Raw("count(users.id) as users_count"), "area_id", "areas.name").
         SortDesc("area_id")
     collection,_ := builder.Get()
     

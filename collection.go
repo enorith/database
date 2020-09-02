@@ -1,14 +1,15 @@
-package rithdb
+package database
 
 import (
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/CaoJiayuan/goutilities/str"
 	"reflect"
 	"sort"
 	"strconv"
+
+	"github.com/CaoJiayuan/goutilities/str"
 )
 
 type ItemHolder func(item *CollectionItem, index int)

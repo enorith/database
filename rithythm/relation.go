@@ -2,7 +2,7 @@ package rithythm
 
 import (
 	"fmt"
-	"github.com/CaoJiayuan/rithdb"
+	"github.com/CaoJiayuan/database"
 	"github.com/jinzhu/inflection"
 )
 
@@ -71,7 +71,7 @@ func (h *HasMany) MatchMarshal(d DataModel, out *RithythmCollection) {
 	col, err := h.Load()
 	if err == nil && col != nil {
 		col.GetItems()
-		col.Each(func(item *rithdb.CollectionItem, index int) {
+		col.Each(func(item *database.CollectionItem, index int) {
 			foreign, e := item.GetUint(h.foreignKey)
 			local, e2 := d.GetUint(h.localKey)
 			if e == nil && e2 == nil && local == foreign {

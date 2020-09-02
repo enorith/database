@@ -1,4 +1,4 @@
-package rithdb
+package database
 
 import (
 	"fmt"

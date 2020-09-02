@@ -1,14 +1,14 @@
 package rithythm
 
 import (
-	"github.com/CaoJiayuan/rithdb"
+	"github.com/CaoJiayuan/database"
 	"time"
 )
 
-var config rithdb.Config
+var config database.Config
 
 type RithythmBuilder struct {
-	*rithdb.QueryBuilder
+	*database.QueryBuilder
 	model DataModel
 	loads []string
 }
@@ -48,7 +48,7 @@ func (r *RithythmBuilder) WhereNotNull(column string, and bool) *RithythmBuilder
 	return r
 }
 
-func (r *RithythmBuilder) WhereNest(and bool, handler rithdb.QueryHandler) *RithythmBuilder {
+func (r *RithythmBuilder) WhereNest(and bool, handler database.QueryHandler) *RithythmBuilder {
 	r.QueryBuilder.WhereNest(and, handler)
 	return r
 }
@@ -95,7 +95,7 @@ func (r *RithythmBuilder) eagerLoad(data *RithythmCollection, model RelationMode
 		}
 	}
 
-	data.Each(func(item *rithdb.CollectionItem, index int) {
+	data.Each(func(item *database.CollectionItem, index int) {
 		for k, v := range relations {
 			model := ItemToModel(model, item)
 			if re, ok := v.(RelationOne); ok {
@@ -150,6 +150,6 @@ func (r *RithythmBuilder) Remember(key string, d time.Duration) (*RithythmCollec
 	return CollectFromBase(col, r.model), err
 }
 
-func Config(c rithdb.Config) {
+func Config(c database.Config) {
 	config = c
 }

@@ -1,18 +1,18 @@
 package rithythm
 
 import (
-	"github.com/CaoJiayuan/rithdb"
+	"github.com/CaoJiayuan/database"
 )
 
 type ModelResolver func(model DataModel, key int) interface{}
 type ModelFilter func(model DataModel, key int) bool
 
 type RithythmCollection struct {
-	*rithdb.Collection
+	*database.Collection
 	model DataModel
 }
 
-func CollectFromBase(c *rithdb.Collection, model DataModel) *RithythmCollection {
+func CollectFromBase(c *database.Collection, model DataModel) *RithythmCollection {
 	collection := &RithythmCollection{}
 
 	collection.Collection = c
@@ -23,7 +23,7 @@ func CollectFromBase(c *rithdb.Collection, model DataModel) *RithythmCollection 
 }
 
 func NewCollection(model DataModel) *RithythmCollection {
-	return CollectFromBase(&rithdb.Collection{}, model)
+	return CollectFromBase(&database.Collection{}, model)
 }
 
 func (c *RithythmCollection) GetItem(key int) DataModel {
@@ -31,10 +31,10 @@ func (c *RithythmCollection) GetItem(key int) DataModel {
 }
 
 func NewCollectionEmpty(model DataModel) *RithythmCollection {
-	return CollectFromBase(rithdb.NewCollectionEmpty(), model)
+	return CollectFromBase(database.NewCollectionEmpty(), model)
 }
 
-func ItemToModel(model DataModel, item *rithdb.CollectionItem) DataModel {
+func ItemToModel(model DataModel, item *database.CollectionItem) DataModel {
 	m := model.New()
 	m.Unmarshal(item)
 

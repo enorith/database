@@ -1,7 +1,7 @@
 package rithythm
 
 import (
-	"github.com/CaoJiayuan/rithdb"
+	"github.com/CaoJiayuan/database"
 	"reflect"
 )
 
@@ -19,7 +19,7 @@ type DataModel interface {
 	GetTable() string
 	GetConnectionName() string
 	GetKeyName() string
-	Unmarshal(data *rithdb.CollectionItem)
+	Unmarshal(data *database.CollectionItem)
 	New() DataModel
 	GetValue(field string) interface{}
 	GetString(field string) (string, error)
@@ -34,7 +34,7 @@ type DataModel interface {
 }
 
 type Model struct {
-	item  *rithdb.CollectionItem
+	item  *database.CollectionItem
 	valid bool
 }
 
@@ -45,7 +45,7 @@ func (m *Model) MarshalToCache() interface{} {
 func (m *Model) UnmarshalFromCache(decoder func(value interface{}) bool) bool {
 	var data map[string]interface{}
 	m.valid = decoder(&data)
-	m.item = rithdb.NewCollectionItem(data)
+	m.item = database.NewCollectionItem(data)
 	return m.valid
 }
 
@@ -98,7 +98,7 @@ func (m *Model) GetUint(field string) (uint64, error) {
 	return m.item.GetUint(field)
 }
 
-func (m *Model) Unmarshal(data *rithdb.CollectionItem) {
+func (m *Model) Unmarshal(data *database.CollectionItem) {
 	m.item = data
 	m.valid = true
 }

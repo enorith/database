@@ -1,4 +1,4 @@
-package rithdb
+package database
 
 type Connections struct {
 	items []*Connection
