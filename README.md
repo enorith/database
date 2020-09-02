@@ -1,4 +1,4 @@
-# Database component for [Rith](https://github.com/CaoJiayuan/rith)
+# Database component for [Enorith](https://github.com/enorith/framework)
 
 
 ## Usage
@@ -8,9 +8,9 @@ package main
 
 import (
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/CaoJiayuan/database"
+	"github.com/enorith/database"
 	"fmt"
-	"github.com/CaoJiayuan/database/rithythm"
+	"github.com/enorith/database/rithythm"
 )
 
 
