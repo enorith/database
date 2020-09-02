@@ -2,7 +2,8 @@ package rithythm
 
 import (
 	"fmt"
-	"github.com/CaoJiayuan/database"
+
+	"github.com/enorith/database"
 	"github.com/jinzhu/inflection"
 )
 

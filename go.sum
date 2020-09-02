@@ -2,8 +2,6 @@ github.com/CaoJiayuan/gocache v0.0.0-20190529112516-fc1b604cdd90 h1:7IY6Nol5syAc
 github.com/CaoJiayuan/gocache v0.0.0-20190529112516-fc1b604cdd90/go.mod h1:FBCqp7SGicRuQget1JME3mG/NYy7mwHXdYHQDvY1z6c=
 github.com/CaoJiayuan/goutilities v0.0.0-20190531120433-c0d9cccb21b4 h1:bfS0Akrc5ArAeNw4hjDVd8E+YPSCg8iD7G2oFh4k6iw=
 github.com/CaoJiayuan/goutilities v0.0.0-20190531120433-c0d9cccb21b4/go.mod h1:d1eWoJiCoWrSVFfOFdqwmrnSsnczNg+sg6Dp468Swmw=
-github.com/CaoJiayuan/rithenv v0.0.0-20181229021358-d94b4f0feb44 h1:PRIo7vaWkIwXJSgE6ynpHN/nxD8+BwUHdRvo76AIcEQ=
-github.com/CaoJiayuan/rithenv v0.0.0-20181229021358-d94b4f0feb44/go.mod h1:Gj9Qmc6Y0dSZCyPpFs6yQMySd84NwZKUcKq7k6Zff2A=
 github.com/CaoJiayuan/rithev v0.0.0-20190520072613-27ff2c60939d h1:S9QG9/CiA0ORoU3Fa+sUzYv4wjqCCpWEzYJwYLl8ukQ=
 github.com/CaoJiayuan/rithev v0.0.0-20190520072613-27ff2c60939d/go.mod h1:zKkmX92TXqq8qtsyoSjhgoTCakPZaCS79NYAgcOZyiI=
 github.com/enorith/environment v0.0.1 h1:JQT3eU/wZ9ujZtDBxDwqzL1SnaFtBmbPSiIdowY048Q=

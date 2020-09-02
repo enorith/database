@@ -1,7 +1,7 @@
 package rithythm
 
 import (
-	"github.com/CaoJiayuan/database"
+	"github.com/enorith/database"
 )
 
 type ModelResolver func(model DataModel, key int) interface{}

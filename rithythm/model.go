@@ -1,8 +1,9 @@
 package rithythm
 
 import (
-	"github.com/CaoJiayuan/database"
 	"reflect"
+
+	"github.com/enorith/database"
 )
 
 type RelationModel interface {

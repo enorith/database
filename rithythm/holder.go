@@ -1,7 +1,7 @@
 package rithythm
 
 import (
-	"github.com/CaoJiayuan/database"
+	"github.com/enorith/database"
 )
 
 type ModelHolder struct {

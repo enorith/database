@@ -1,8 +1,9 @@
 package rithythm
 
 import (
-	"github.com/CaoJiayuan/database"
 	"time"
+
+	"github.com/enorith/database"
 )
 
 var config database.Config
