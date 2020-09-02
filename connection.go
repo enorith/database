@@ -4,11 +4,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	env "github.com/CaoJiayuan/rithenv"
-	ev "github.com/CaoJiayuan/rithev"
 	"strings"
 	"sync"
 	"time"
+
+	ev "github.com/CaoJiayuan/rithev"
+	env "github.com/enorith/environment"
 )
 
 type DriverRegister = func(config ConnectionConfig) (*sql.DB, error)
