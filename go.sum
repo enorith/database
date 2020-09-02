@@ -1,5 +1,5 @@
-github.com/CaoJiayuan/gocache v0.0.0-20190529112516-fc1b604cdd90 h1:7IY6Nol5syAcaASlg5PSYb8Ae0RFwid6k0N+uYfC7mw=
-github.com/CaoJiayuan/gocache v0.0.0-20190529112516-fc1b604cdd90/go.mod h1:FBCqp7SGicRuQget1JME3mG/NYy7mwHXdYHQDvY1z6c=
+github.com/enorith/cache v0.0.1 h1:+2rHIexb1Z8q3BcSB5x2if58ItZOdHnXYadhAErg6Uo=
+github.com/enorith/cache v0.0.1/go.mod h1:01upM2LUgcmtSNZric4JSBhsBRpOki61H5CCLeZ/3vk=
 github.com/enorith/environment v0.0.1 h1:JQT3eU/wZ9ujZtDBxDwqzL1SnaFtBmbPSiIdowY048Q=
 github.com/enorith/environment v0.0.1/go.mod h1:dWBMAtvMWPCnqN+xzA7M4IkHn0qMwz8aL13eIm+R/GY=
 github.com/enorith/event v0.0.2 h1:tCmf7Dwf7aHZsF3NN9jQER8p1GpadM9UkD+Bi1sznRU=

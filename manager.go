@@ -3,10 +3,10 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"github.com/CaoJiayuan/gocache"
+	"github.com/enorith/cache"
 )
 
-var Cache gocache.Repository
+var Cache cache.Repository
 
 func WithDefaultDrivers() {
 	registerDefaultDrivers()
