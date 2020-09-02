@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/CaoJiayuan/goutilities/str"
+	"github.com/enorith/supports/str"
 )
 
 type ItemHolder func(item *CollectionItem, index int)

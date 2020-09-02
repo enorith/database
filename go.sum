@@ -1,11 +1,11 @@
 github.com/CaoJiayuan/gocache v0.0.0-20190529112516-fc1b604cdd90 h1:7IY6Nol5syAcaASlg5PSYb8Ae0RFwid6k0N+uYfC7mw=
 github.com/CaoJiayuan/gocache v0.0.0-20190529112516-fc1b604cdd90/go.mod h1:FBCqp7SGicRuQget1JME3mG/NYy7mwHXdYHQDvY1z6c=
-github.com/CaoJiayuan/goutilities v0.0.0-20190531120433-c0d9cccb21b4 h1:bfS0Akrc5ArAeNw4hjDVd8E+YPSCg8iD7G2oFh4k6iw=
-github.com/CaoJiayuan/goutilities v0.0.0-20190531120433-c0d9cccb21b4/go.mod h1:d1eWoJiCoWrSVFfOFdqwmrnSsnczNg+sg6Dp468Swmw=
 github.com/enorith/environment v0.0.1 h1:JQT3eU/wZ9ujZtDBxDwqzL1SnaFtBmbPSiIdowY048Q=
 github.com/enorith/environment v0.0.1/go.mod h1:dWBMAtvMWPCnqN+xzA7M4IkHn0qMwz8aL13eIm+R/GY=
 github.com/enorith/event v0.0.2 h1:tCmf7Dwf7aHZsF3NN9jQER8p1GpadM9UkD+Bi1sznRU=
 github.com/enorith/event v0.0.2/go.mod h1:nIaX1RzFFWW/OxtAqe2GIU35a3EMolpi+O9fiHpNawo=
+github.com/enorith/supports v0.0.1 h1:CiV2DHOk4foPGJ72nAEHIiPwJYA1NinlNB/RYXM84v4=
+github.com/enorith/supports v0.0.1/go.mod h1:arD7UoIt8BKSkZINkCQmKQjE1sW1BbJugDc+mKuFtyk=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsnotify/fsnotify v1.4.9 h1:hsms1Qyu0jgnwNXIxa+/V/PDsU6CfLf6CNO8H7IWoS4=
 github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4IgpuI1SZQ=

@@ -3,7 +3,7 @@ package database
 import (
 	"bytes"
 	"fmt"
-	"github.com/CaoJiayuan/goutilities/str"
+	"github.com/enorith/supports/str"
 	"strings"
 )
 
