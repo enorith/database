@@ -48,7 +48,7 @@ type DBEvent struct {
 }
 
 func (e *DBEvent) GetEventName() string {
-	return "rith::db"
+	return "enorith::db"
 }
 
 func (e *DBEvent) GetRawSql() string {
