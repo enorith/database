@@ -349,7 +349,7 @@ func (q *QueryBuilder) GroupBy(columns ...string) *QueryBuilder {
 	return q
 }
 
-func (q *QueryBuilder) ForPage(page int, perPage int) *QueryBuilder {
+func (q *QueryBuilder) ForPage(page, perPage int) *QueryBuilder {
 	return q.Offset((page - 1) * perPage).Take(perPage)
 }
 
@@ -384,6 +384,12 @@ func (q *QueryBuilder) Paginate(page, perPage int) *Paginator {
 
 func (q *QueryBuilder) ToSql() string {
 	return q.connection.grammar.Compile(q)
+}
+
+func (q *QueryBuilder) Using(connection string) *QueryBuilder {
+	q.connection.Using(connection)
+
+	return q
 }
 
 func (q *QueryBuilder) Remember(key string, d time.Duration) (*Collection, error) {

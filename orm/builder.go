@@ -3,6 +3,7 @@ package orm
 import (
 	"fmt"
 	"github.com/enorith/database"
+	"github.com/enorith/supports/reflection"
 	"github.com/jinzhu/inflection"
 	"reflect"
 	"strings"
@@ -10,6 +11,10 @@ import (
 )
 
 type ModelNotfoundError string
+
+func (m ModelNotfoundError) StatusCode() int {
+	return 404
+}
 
 func (m ModelNotfoundError) Error() string {
 	return fmt.Sprintf("model of %s not found", string(m))
@@ -41,8 +46,181 @@ type Builder struct {
 	*database.QueryBuilder
 }
 
+func (b *Builder) Where(column, operator string, value interface{}, and bool) *Builder {
+	b.QueryBuilder.Where(column, operator, value, and)
+	return b
+}
+
+func (b *Builder) WhereNull(column string, and bool) *Builder {
+	b.QueryBuilder.WhereNull(column, and)
+
+	return b
+}
+
+func (b *Builder) AndWhereNull(column string) *Builder {
+	b.QueryBuilder.AndWhereNull(column)
+	return b
+}
+
+func (b *Builder) AndWhereNotNull(column string) *Builder {
+	b.QueryBuilder.AndWhereNotNull(column)
+
+	return b
+}
+
+func (b *Builder) WhereNest(and bool, handler database.QueryHandler) *Builder {
+	b.QueryBuilder.WhereNest(and, handler)
+
+	return b
+}
+
+func (b *Builder) AndWhereNest(handler database.QueryHandler) *Builder {
+	b.QueryBuilder.AndWhereNest(handler)
+
+	return b
+}
+
+func (b *Builder) WhereIn(column string, value []interface{}, and bool) *Builder {
+	b.QueryBuilder.WhereIn(column, value, and)
+
+	return b
+}
+
+func (b *Builder) WhereBetween(column string, one interface{}, two interface{}, and bool) *Builder {
+	b.QueryBuilder.WhereBetween(column, one, two, and)
+
+	return b
+}
+
+func (b *Builder) WhereSub(from, column, operator string, and bool, handler database.QueryHandler) *Builder {
+	b.QueryBuilder.WhereSub(from, column, operator, and, handler)
+
+	return b
+}
+
+func (b *Builder) AndWhereSub(from, column, operator string, handler database.QueryHandler) *Builder {
+	b.QueryBuilder.AndWhereSub(from, column, operator, handler)
+
+	return b
+}
+
+func (b *Builder) AndWhere(column string, operator string, value interface{}) *Builder {
+	b.QueryBuilder.AndWhere(column, operator, value)
+
+	return b
+}
+
+func (b *Builder) OrWhere(column string, operator string, value interface{}) *Builder {
+	b.QueryBuilder.OrWhere(column, operator, value)
+
+	return b
+}
+
+func (b *Builder) FromSub(builder *Builder, as string) *Builder {
+
+	b.QueryBuilder.FromSub(builder.QueryBuilder, as)
+
+	return b
+}
+
+func (b *Builder) Sort(by string, direction string) *Builder {
+	b.QueryBuilder.Sort(by, direction)
+
+	return b
+}
+
+func (b *Builder) SortDesc(by string) *Builder {
+	b.QueryBuilder.SortDesc(by)
+
+	return b
+}
+
+func (b *Builder) SortAsc(by string) *Builder {
+	b.QueryBuilder.SortAsc(by)
+
+	return b
+}
+
+func (b *Builder) Select(columns ...string) *Builder {
+	b.QueryBuilder.Select(columns...)
+
+	return b
+}
+
+func (b *Builder) Join(table, first, operator, second, category string) *Builder {
+	b.QueryBuilder.Join(table, first, operator, second, category)
+
+	return b
+}
+
+func (b *Builder) LeftJoin(table, first, operator, second string) *Builder {
+	b.QueryBuilder.LeftJoin(table, first, operator, second)
+
+	return b
+}
+
+func (b *Builder) RightJoin(table, first, operator, second string) *Builder {
+	b.QueryBuilder.RightJoin(table, first, operator, second)
+
+	return b
+}
+
+func (b *Builder) InnerJoin(table, first, operator, second string) *Builder {
+	b.QueryBuilder.InnerJoin(table, first, operator, second)
+
+	return b
+}
+
+func (b *Builder) JoinWith(category, table string, handler database.JoinHandler) *Builder {
+	b.QueryBuilder.JoinWith(category, table, handler)
+
+	return b
+}
+
+func (b *Builder) Take(limit int) *Builder {
+	b.QueryBuilder.Take(limit)
+
+	return b
+}
+
+func (b *Builder) Offset(offset int) *Builder {
+	b.QueryBuilder.Offset(offset)
+
+	return b
+}
+
+func (b *Builder) GroupBy(columns ...string) *Builder {
+	b.QueryBuilder.GroupBy(columns...)
+
+	return b
+}
+
+func (b *Builder) ForPage(page, perPage int) *Builder {
+	b.QueryBuilder.ForPage(page, perPage)
+
+	return b
+}
+
+func (b *Builder) Using(connection string) *Builder {
+	b.QueryBuilder.Using(connection)
+
+	return b
+}
+
+func (b *Builder) Get(columns ...string) (*database.Collection, error) {
+	return b.QueryBuilder.Get(columns...)
+}
+
 func (b *Builder) Marshal(models interface{}) error {
-	table := guessTableName(models)
+	table, e := guessTableName(models)
+	if e != nil {
+		return e
+	}
+	conn, e := guessConnection(models)
+	if e != nil {
+		return e
+	}
+	b.Using(conn)
 	collection, e := b.From(table).Get()
 
 	if e != nil {
@@ -53,7 +231,15 @@ func (b *Builder) Marshal(models interface{}) error {
 }
 
 func (b *Builder) FindFor(id int64, model interface{}) error {
-	table := guessTableName(model)
+	table, e := guessTableName(model)
+	if e != nil {
+		return e
+	}
+	conn, e := guessConnection(model)
+	if e != nil {
+		return e
+	}
+	b.Using(conn)
 	item, e := b.From(table).Where(guessKeyName(model), "=", id, true).First()
 
 	if e != nil {
@@ -73,8 +259,8 @@ func (b *Builder) FindFor(id int64, model interface{}) error {
 }
 
 func (b *Builder) marshalModels(v interface{}, collection *database.Collection) error {
-	t := typeStruct(v)
-	o := valueStruct(v)
+	t := reflection.StructType(v)
+	o := reflection.StructValue(v)
 
 	if t.Kind() == reflect.Slice || t.Kind() == reflect.Array {
 		it := t.Elem()
@@ -95,10 +281,10 @@ func (b *Builder) marshalModels(v interface{}, collection *database.Collection) 
 
 func (b *Builder) marshalModel(t reflect.Type, v interface{}, item *database.CollectionItem) reflect.Value {
 	if t == nil {
-		t = typeStruct(v)
+		t = reflection.StructType(v)
 	}
 
-	o := valueStruct(v)
+	o := reflection.StructValue(v)
 
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
@@ -131,36 +317,8 @@ func (b *Builder) marshalModel(t reflect.Type, v interface{}, item *database.Col
 	return o
 }
 
-func typeStruct(v interface{}) reflect.Type {
-	if t, ok := v.(reflect.Type); ok {
-		return t
-	}
-
-	t := reflect.TypeOf(v)
-
-	if t.Kind() == reflect.Ptr {
-		t = t.Elem()
-	}
-
-	return t
-}
-
-func valueStruct(v interface{}) reflect.Value {
-	if va, ok := v.(reflect.Value); ok {
-		return va
-	}
-
-	va := reflect.ValueOf(v)
-
-	if va.Kind() == reflect.Ptr {
-		va = va.Elem()
-	}
-
-	return va
-}
-
 func guessKeyName(v interface{}) string {
-	it := typeStruct(v)
+	it := reflection.StructType(v)
 
 	cacheKey := "keyName:" + it.String()
 
@@ -170,8 +328,8 @@ func guessKeyName(v interface{}) string {
 
 	var key string
 	iv := reflect.New(it).Interface()
-	if tm, ok := iv.(KeyedModel); ok {
-		key = tm.GetKeyName()
+	if tm, ok := iv.(WithKey); ok {
+		key = tm.KeyName()
 	} else {
 		key = "id"
 	}
@@ -180,39 +338,72 @@ func guessKeyName(v interface{}) string {
 	return key
 }
 
-func guessTableName(v interface{}) string {
-	t := typeStruct(v)
+func guessTableName(v interface{}) (string, error) {
+	t := reflection.StructType(v)
 
 	var table string
 
 	cacheKey := "table:" + t.String()
 
 	if table, ok := tc.get(cacheKey); ok {
-		return table
+		return table, nil
 	}
 
 	var it reflect.Type
 	switch t.Kind() {
 	case reflect.Slice:
 		it = t.Elem()
-		fallthrough
 	case reflect.Struct:
 		it = t
-		iv := reflect.New(it).Interface()
-		if tm, ok := iv.(TabledModel); ok {
-			table = tm.GetTable()
-		} else {
-			typeName := it.String()
-			ns := strings.Split(typeName, ".")
-			table = inflection.Plural(strings.ToLower(ns[len(ns)-1]))
-		}
+	default:
+		return "", fmt.Errorf("unable guess table name from %v", t)
 	}
-
+	iv := reflect.New(it).Interface()
+	if tm, ok := iv.(WithTable); ok {
+		table = tm.Table()
+	} else {
+		typeName := it.String()
+		ns := strings.Split(typeName, ".")
+		table = inflection.Plural(strings.ToLower(ns[len(ns)-1]))
+	}
 	if table != "" {
 		tc.set(cacheKey, table)
 	}
 
-	return table
+	return table, nil
+}
+
+func guessConnection(v interface{}) (string, error) {
+	t := reflection.StructType(v)
+
+	var conn string
+
+	cacheKey := "connection:" + t.String()
+
+	if table, ok := tc.get(cacheKey); ok {
+		return table, nil
+	}
+
+	var it reflect.Type
+	switch t.Kind() {
+	case reflect.Struct:
+		it = t
+	case reflect.Slice:
+		it = t.Elem()
+	default:
+		return "", fmt.Errorf("unable guess connection from %v", t)
+	}
+	iv := reflect.New(it).Interface()
+	if tm, ok := iv.(WithConnection); ok {
+		conn = tm.Connection()
+	} else {
+		conn = ""
+	}
+	if conn != "" {
+		tc.set(cacheKey, conn)
+	}
+
+	return conn, nil
 }
 
 func init() {
