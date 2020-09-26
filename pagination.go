@@ -5,7 +5,22 @@ import (
 	"math"
 )
 
-type Paginator struct {
+type lengthAwareMeta struct {
+	Total       int64   `json:"total"`
+	CurrentPage int     `json:"current_page"`
+	LastPage    float64 `json:"last_page"`
+	PerPage     int     `json:"per_page"`
+	From        int64   `json:"from"`
+	To          int64   `json:"to"`
+}
+
+type LengthAwareResult struct {
+	Data  *Collection     `json:"data"`
+	Meta  lengthAwareMeta `json:"meta"`
+	Valid bool            `json:"-"`
+}
+
+type LengthAwarePaginator struct {
 	builder *QueryBuilder
 	page    int
 	perPage int
@@ -13,7 +28,7 @@ type Paginator struct {
 	items   *Collection
 }
 
-func (p *Paginator) MarshalJSON() ([]byte, error) {
+func (p *LengthAwarePaginator) MarshalJSON() ([]byte, error) {
 	result, err := p.ToResult()
 
 	if err != nil {
@@ -23,7 +38,7 @@ func (p *Paginator) MarshalJSON() ([]byte, error) {
 	return json.Marshal(result)
 }
 
-func (p *Paginator) GetTotal() int64 {
+func (p *LengthAwarePaginator) GetTotal() int64 {
 	if p.total < 0 {
 		p.total = p.builder.CountForPage()
 	}
@@ -31,34 +46,38 @@ func (p *Paginator) GetTotal() int64 {
 	return p.total
 }
 
-func (p *Paginator) ToResult() (map[string]interface{}, error) {
+func (p *LengthAwarePaginator) ToResult() (LengthAwareResult, error) {
 	result, err := p.Items()
 
 	if err != nil {
-		return nil, err
+		return LengthAwareResult{}, err
 	}
 
 	total := p.GetTotal()
 
 	lastPage := math.Ceil(float64(total) / float64(p.perPage))
-	data := map[string]interface{}{
-		"total":        total,
-		"current_page": p.page,
-		"per_page":     p.perPage,
-		"data":         result,
-		"from":         p.firstIndex(),
-		"to":           p.lastIndex(),
-		"last_page":    lastPage,
+	meta := lengthAwareMeta{
+		Total:       total,
+		CurrentPage: p.page,
+		LastPage:    lastPage,
+		PerPage:     p.perPage,
+		From:        p.firstIndex(),
+		To:          p.lastIndex(),
+	}
+	data := LengthAwareResult{
+		Data:  result,
+		Meta:  meta,
+		Valid: true,
 	}
 
 	return data, nil
 }
 
-func (p *Paginator) firstIndex() int64 {
+func (p *LengthAwarePaginator) firstIndex() int64 {
 	return int64((p.page-1)*p.perPage + 1)
 }
 
-func (p *Paginator) Items() (*Collection, error) {
+func (p *LengthAwarePaginator) Items() (*Collection, error) {
 	if p.items != nil {
 		return p.items, nil
 	}
@@ -67,7 +86,7 @@ func (p *Paginator) Items() (*Collection, error) {
 	return p.items, err
 }
 
-func (p *Paginator) lastIndex() int64 {
+func (p *LengthAwarePaginator) lastIndex() int64 {
 	items, err := p.Items()
 	if err != nil {
 		return 0

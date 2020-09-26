@@ -364,7 +364,7 @@ func (q *QueryBuilder) CountForPage(column ...string) int64 {
 	return query.FromSub(builder, "page_count").Count(column...)
 }
 
-func (q *QueryBuilder) Paginate(page, perPage int) *Paginator {
+func (q *QueryBuilder) Paginate(page, perPage int) *LengthAwarePaginator {
 	if page < 1 {
 		page = 1
 	}
@@ -373,7 +373,7 @@ func (q *QueryBuilder) Paginate(page, perPage int) *Paginator {
 		perPage = DefaultPerPage
 	}
 
-	return &Paginator{
+	return &LengthAwarePaginator{
 		q,
 		page,
 		perPage,

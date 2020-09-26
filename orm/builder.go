@@ -289,6 +289,7 @@ func (b *Builder) marshalModel(t reflect.Type, v interface{}, item *database.Col
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
 		if !f.Anonymous {
+			// TODO: marshal relation
 			input := f.Tag.Get("field")
 			field := o.Field(i)
 			if input != "" && field.CanSet() {
