@@ -46,6 +46,12 @@ type Builder struct {
 	*database.QueryBuilder
 }
 
+func (b *Builder) From(table string) *Builder {
+	b.QueryBuilder.From(table)
+
+	return b
+}
+
 func (b *Builder) Where(column, operator string, value interface{}, and bool) *Builder {
 	b.QueryBuilder.Where(column, operator, value, and)
 	return b
