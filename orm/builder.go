@@ -74,16 +74,16 @@ func (b *Builder) AndWhereNotNull(column string) *Builder {
 	return b
 }
 
-func (b *Builder) WhereNest(and bool, handler database.QueryHandler) *Builder {
-	b.QueryBuilder.WhereNest(and, handler)
+func (b *Builder) WhereNest(and bool, handler database.QueryHandler) (*Builder, error) {
+	_, e := b.QueryBuilder.WhereNest(and, handler)
 
-	return b
+	return b, e
 }
 
-func (b *Builder) AndWhereNest(handler database.QueryHandler) *Builder {
-	b.QueryBuilder.AndWhereNest(handler)
+func (b *Builder) AndWhereNest(handler database.QueryHandler) (*Builder, error) {
+	_, e := b.QueryBuilder.AndWhereNest(handler)
 
-	return b
+	return b, e
 }
 
 func (b *Builder) WhereIn(column string, value []interface{}, and bool) *Builder {
@@ -122,11 +122,14 @@ func (b *Builder) OrWhere(column string, operator string, value interface{}) *Bu
 	return b
 }
 
-func (b *Builder) FromSub(builder *Builder, as string) *Builder {
+func (b *Builder) FromSub(builder *Builder, as string) (*Builder, error) {
 
-	b.QueryBuilder.FromSub(builder.QueryBuilder, as)
+	_, e := b.QueryBuilder.FromSub(builder.QueryBuilder, as)
+	if e != nil {
+		return nil, e
+	}
 
-	return b
+	return b, nil
 }
 
 func (b *Builder) Sort(by string, direction string) *Builder {
@@ -207,10 +210,13 @@ func (b *Builder) ForPage(page, perPage int) *Builder {
 	return b
 }
 
-func (b *Builder) Using(connection string) *Builder {
-	b.QueryBuilder.Using(connection)
+func (b *Builder) Using(connection string) error {
+	e := b.QueryBuilder.Using(connection)
+	if e != nil {
+		return e
+	}
 
-	return b
+	return nil
 }
 
 func (b *Builder) Get(columns ...string) (*database.Collection, error) {
@@ -226,7 +232,11 @@ func (b *Builder) Marshal(models interface{}) error {
 	if e != nil {
 		return e
 	}
-	b.Using(conn)
+	err := b.Using(conn)
+	if err != nil {
+		return err
+	}
+
 	collection, e := b.From(table).Get()
 
 	if e != nil {
@@ -245,7 +255,10 @@ func (b *Builder) FindFor(id int64, model interface{}) error {
 	if e != nil {
 		return e
 	}
-	b.Using(conn)
+	err := b.Using(conn)
+	if err != nil {
+		return err
+	}
 	item, e := b.From(table).Where(guessKeyName(model), "=", id, true).First()
 
 	if e != nil {

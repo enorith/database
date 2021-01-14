@@ -4,8 +4,6 @@ import (
 	"github.com/enorith/database"
 )
 
-var defaultConfig database.Config
-
 type WithTable interface {
 	Table() string
 }
@@ -49,13 +47,16 @@ func (m *Model) InitWith(v interface{}) error {
 	m.v = v
 
 	b := new(Builder)
-	name := m.Connection()
-	if len(name) < 1 {
-		name = defaultConfig.Default
+	if len(conn) < 1 {
+		conn = database.DefaultConnection
 	}
-	connection := database.NewConnection(name, defaultConfig)
-	b.QueryBuilder = database.NewBuilder(connection)
-	b.From(m.Table())
+	builder, be := database.DefaultManager.NewBuilder(conn)
+	if be != nil {
+		return err
+	}
+
+	b.QueryBuilder = builder
+	b.From(table)
 	m.Builder = b
 	return nil
 }
@@ -70,10 +71,6 @@ func (m *Model) Table() string {
 
 func (m *Model) KeyName() string {
 	return m.keyName
-}
-
-func Config(c database.Config) {
-	defaultConfig = c
 }
 
 func NewModel(v interface{}) (*Model, error) {

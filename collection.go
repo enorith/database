@@ -2,14 +2,12 @@ package database
 
 import (
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/enorith/supports/str"
 	"reflect"
 	"sort"
 	"strconv"
-
-	"github.com/enorith/supports/str"
 )
 
 type ItemHolder func(item *CollectionItem, index int)
@@ -127,6 +125,10 @@ func (i *CollectionItem) Set(key string, v interface{}) {
 	i.item[key] = v
 }
 
+func (i *CollectionItem) SetItem(v map[string]interface{}) {
+	i.item = v
+}
+
 func sortLesser(i, j interface{}) bool {
 	switch i.(type) {
 	case uint64:
@@ -194,12 +196,12 @@ func (c *Collection) UnmarshalFromCache(decoder func(value interface{}) bool) bo
 }
 
 func (c *Collection) MarshalJSON() ([]byte, error) {
-	c.loadAll()
+	c.LoadAll()
 	return json.Marshal(c.items)
 }
 
 func (c *Collection) GetItem(key int) *CollectionItem {
-	c.loadAll()
+	c.LoadAll()
 	if len(c.items) < 1 {
 		return &CollectionItem{}
 	}
@@ -243,7 +245,7 @@ func (c *Collection) First() *CollectionItem {
 }
 
 func (c *Collection) GetItems() []*CollectionItem {
-	c.loadAll()
+	c.LoadAll()
 	return c.items
 }
 
@@ -311,7 +313,7 @@ func (c *Collection) Read() *CollectionItem {
 	return &CollectionItem{c.iterator.Read(), true}
 }
 
-func (c *Collection) loadAll() bool {
+func (c *Collection) LoadAll() bool {
 	if !c.loaded {
 		defer c.Close()
 		for c.Next() {

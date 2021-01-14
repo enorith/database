@@ -1,7 +1,6 @@
 package database
 
 import (
-	"encoding/json"
 	"math"
 )
 

@@ -53,7 +53,7 @@ func (g *SqlGrammar) compileFrom(s *QueryBuilder) string {
 }
 
 func (g *SqlGrammar) CompileExists(s *QueryBuilder) string {
-	return fmt.Sprintf("select exists(%s) as `exists`", s.ToSql())
+	return fmt.Sprintf("select exists(%s) as `exists`", g.Compile(s))
 }
 
 func (g *SqlGrammar) CompileCount(s *QueryBuilder, column ...string) string {
@@ -64,7 +64,7 @@ func (g *SqlGrammar) CompileCount(s *QueryBuilder, column ...string) string {
 		col = "count(*) as `aggregate`"
 	}
 
-	return s.Select(Raw(col)).ToSql()
+	return g.Compile(s.Select(Raw(col)))
 }
 
 func (g *SqlGrammar) CompileInsertOne(table string, data map[string]interface{}) (sql string, bindings []interface{}) {

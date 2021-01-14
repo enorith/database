@@ -89,20 +89,25 @@ func (q *QueryBuilder) AndWhereNotNull(column string) *QueryBuilder {
 	return q
 }
 
-func (q *QueryBuilder) WhereNest(and bool, handler QueryHandler) *QueryBuilder {
+func (q *QueryBuilder) WhereNest(and bool, handler QueryHandler) (*QueryBuilder, error) {
 	builder := q.NewQuery()
 	handler(builder)
 
-	sql := q.connection.grammar.CompileWheres(builder, false)
+	grammar, err := q.connection.GetGrammar()
+	if err != nil {
+		return builder, err
+	}
+
+	sql := grammar.CompileWheres(builder, false)
 
 	q.bindings = append(q.bindings, builder.bindings...)
 
 	q.addWhere(whereNest, sql, "", and)
 
-	return q
+	return q, nil
 }
 
-func (q *QueryBuilder) AndWhereNest(handler QueryHandler) *QueryBuilder {
+func (q *QueryBuilder) AndWhereNest(handler QueryHandler) (*QueryBuilder, error) {
 	return q.WhereNest(true, handler)
 }
 
@@ -122,7 +127,11 @@ func (q *QueryBuilder) Exists() bool {
 
 func (q *QueryBuilder) Count(column ...string) int64 {
 
-	sql := q.connection.grammar.CompileCount(q, column...)
+	grammar, e := q.connection.GetGrammar()
+	if e != nil {
+		return 0
+	}
+	sql := grammar.CompileCount(q, column...)
 
 	rows, err := q.connection.Select(sql, q.FlatBindings()...)
 	if err != nil {
@@ -182,14 +191,20 @@ func (q *QueryBuilder) From(table string) *QueryBuilder {
 	return q
 }
 
-func (q *QueryBuilder) FromSub(builder *QueryBuilder, as string) *QueryBuilder {
+func (q *QueryBuilder) FromSub(builder *QueryBuilder, as string) (*QueryBuilder, error) {
 
-	sql, bindings := builder.ToSql(), builder.FlatBindings()
+	toSql, err := builder.ToSql()
 
-	q.from = Raw(fmt.Sprintf("(%s) as %s", sql, WrapValue(as)))
+	if err != nil {
+		return nil, err
+	}
+
+	bindings :=  builder.FlatBindings()
+
+	q.from = Raw(fmt.Sprintf("(%s) as %s", toSql, WrapValue(as)))
 	q.bindings = append(q.bindings, bindings...)
 
-	return q
+	return q, nil
 }
 
 func (q *QueryBuilder) GetRaw(query string, bindings ...interface{}) (*Collection, error) {
@@ -208,14 +223,25 @@ func (q *QueryBuilder) Get(columns ...string) (*Collection, error) {
 		q.columns = columns
 	}
 
-	return q.GetRaw(q.ToSql(), q.FlatBindings()...)
+	sql, err := q.ToSql()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return q.GetRaw(sql, q.FlatBindings()...)
 }
 
 func (q *QueryBuilder) GetRowsIterator(columns ...string) (*RowsIterator, error) {
 	if len(q.columns) < 1 {
 		q.columns = columns
 	}
-	rows, err := q.connection.Select(q.ToSql(), q.FlatBindings()...)
+	sql, e := q.ToSql()
+	if e != nil {
+		return nil, e
+	}
+
+	rows, err := q.connection.Select(sql, q.FlatBindings()...)
 
 	if err != nil {
 		return nil, err
@@ -361,7 +387,12 @@ func (q *QueryBuilder) CountForPage(column ...string) int64 {
 	builder.orders = [][2]string{}
 	builder.Select(column...)
 	query := q.NewQuery()
-	return query.FromSub(builder, "page_count").Count(column...)
+	sub, err := query.FromSub(builder, "page_count")
+	if err != nil {
+		return 0
+	}
+
+	return sub.Count(column...)
 }
 
 func (q *QueryBuilder) Paginate(page, perPage int) *LengthAwarePaginator {
@@ -382,14 +413,25 @@ func (q *QueryBuilder) Paginate(page, perPage int) *LengthAwarePaginator {
 	}
 }
 
-func (q *QueryBuilder) ToSql() string {
-	return q.connection.grammar.Compile(q)
+func (q *QueryBuilder) ToSql() (string, error) {
+	g, e := q.connection.GetGrammar()
+
+	if e != nil {
+		return "", e
+	}
+
+	return g.Compile(q), nil
 }
 
-func (q *QueryBuilder) Using(connection string) *QueryBuilder {
-	q.connection.Using(connection)
+func (q *QueryBuilder) Using(connection string) error {
+	var e error
+	q.connection, e = DefaultManager.GetConnection(connection)
 
-	return q
+	if e != nil {
+		return e
+	}
+
+	return nil
 }
 
 func (q *QueryBuilder) Remember(key string, d time.Duration) (*Collection, error) {
@@ -418,8 +460,16 @@ func (q *QueryBuilder) GetColumns() []string {
 	return q.columns
 }
 
-func (q *QueryBuilder) GetConnection() *Connection {
-	return q.connection
+func (q *QueryBuilder) GetConnection() (*Connection, error) {
+	if q.connection == nil {
+		connection, err := DefaultManager.GetConnection()
+		if err != nil {
+			return nil, err
+		}
+		q.connection = connection
+	}
+
+	return q.connection, nil
 }
 
 func (q *QueryBuilder) NewQuery() *QueryBuilder {

@@ -8,13 +8,10 @@ import (
 	"sync"
 	"time"
 
-	env "github.com/enorith/environment"
 	ev "github.com/enorith/event"
 )
 
-type DriverRegister = func(config ConnectionConfig) (*sql.DB, error)
-
-var driverRegister map[string]DriverRegister
+const DefaultTimeout = 5 * time.Second
 
 var Conns Connections
 
@@ -35,6 +32,12 @@ func (d *OpenDBs) Get(name string) (*sql.DB, bool) {
 func (d *OpenDBs) Put(name string, db *sql.DB) {
 	d.m.Lock()
 	d.opened[name] = db
+	d.m.Unlock()
+}
+
+func (d *OpenDBs) Remove(name string) {
+	d.m.Lock()
+	delete(d.opened, name)
 	d.m.Unlock()
 }
 
@@ -80,18 +83,23 @@ func (e *DBEvent) GetRawSql() string {
 }
 
 type ConnectionInterface interface {
-	GetConnection() string
+	GetDriver() string
 }
 
 type Connection struct {
-	db         *sql.DB
-	connection string
-	config     Config
-	grammar    Grammar
+	db      *sql.DB
+	driver  string
+	grammar Grammar
+	dsn     string
+	timeout time.Duration
 }
 
-func (c *Connection) GetConnection() string {
-	return c.connection
+func (c *Connection) GetDriver() string {
+	return c.driver
+}
+
+func (c *Connection) dbKey() string {
+	return c.driver + c.dsn
 }
 
 func (c *Connection) Close() error {
@@ -99,6 +107,7 @@ func (c *Connection) Close() error {
 		e := c.db.Close()
 		if e == nil {
 			c.db = nil
+			openDBs.Remove(c.dbKey())
 		}
 		return e
 	}
@@ -106,14 +115,8 @@ func (c *Connection) Close() error {
 	return nil
 }
 
-func (c *Connection) Configure(cfg Config) *Connection {
-	c.config = cfg
-
-	return c
-}
-
 func (c *Connection) Clone() *Connection {
-	return NewConnection(c.connection, c.config)
+	return NewConnection(c.driver, c.dsn)
 }
 
 func (c *Connection) Select(sql string, bindings ...interface{}) (*sql.Rows, error) {
@@ -206,100 +209,56 @@ func (c *Connection) callTxHandler(handler func() error) error {
 	return err
 }
 
-// Using known connection
-// well close current connection before use new connection
-func (c *Connection) Using(connection string) *Connection {
-	if connection != c.connection {
-		c.Close()
-		c.connection = connection
-	}
-	return c
-}
-
-func (c *Connection) GetDB(connection ...string) (*sql.DB, error) {
-	var using string
-	if len(connection) > 0 {
-		using = connection[0]
-	} else if len(c.connection) < 1 {
-		using = c.config.Default
-	} else {
-		using = c.connection
-	}
-
-	if c.db != nil && using == c.connection {
-		return c.db, nil
-	}
-
-	c.Using(using)
+func (c *Connection) GetDB() (*sql.DB, error) {
+	key := c.dbKey()
 
 	// if using opened connection
-	if opened, exits := openDBs.Get(using); exits {
+	if opened, exits := openDBs.Get(key); exits {
 		c.db = opened
 		return opened, nil
 	}
 
-	config := c.resolveConnectionConfig()
+	db, err := sql.Open(c.driver, c.dsn)
+	if err != nil {
+		return nil, err
+	}
 
-	c.setGrammar(config.Driver)
-	register := driverRegister[config.Driver]
-	db, err := register(config)
-	//opened[using] = db
-	openDBs.Put(using, db)
+	openDBs.Put(key, db)
 	c.db = db
 	return db, err
 }
-func (c *Connection) setGrammar(g string) {
-	c.grammar = grammars[g]
+
+func (c *Connection) GetGrammar() (Grammar, error) {
+	if c.grammar != nil {
+		return c.grammar, nil
+	}
+	grammar, ge := grammars[c.driver]
+	if !ge {
+		return nil, fmt.Errorf("grammar [%s] is not registed", c.driver)
+	}
+
+	c.grammar = grammar
+	return grammar, nil
 }
 
-func (c *Connection) resolveConnectionConfig() ConnectionConfig {
-	conf := c.config.Connections[c.connection]
-
-	if conf.Port == 0 {
-		switch c.connection {
-		case "mysql":
-			conf.Port = 3306
-		}
+func (c *Connection) GetTimeout() time.Duration {
+	if c.timeout == 0 {
+		return DefaultTimeout
 	}
 
-	if len(conf.Database) == 0 {
-		conf.Database = env.GetString("DB_DATABASE", "")
-	}
-
-	if len(conf.Username) == 0 {
-		conf.Database = env.GetString("DB_USERNAME", "")
-	}
-
-	if len(conf.Password) == 0 {
-		conf.Database = env.GetString("DB_PASSWORD", "")
-	}
-
-	if len(conf.Host) == 0 {
-		conf.Database = env.GetString("DB_HOST", "127.0.0.1")
-	}
-
-	return conf
+	return c.timeout
 }
 
-func AddDriverRegister(driver string, register DriverRegister) {
-	if driverRegister == nil {
-		driverRegister = map[string]DriverRegister{}
-	}
-	driverRegister[driver] = register
+func (c *Connection) Timeout(t time.Duration) *Connection {
+	c.timeout = t
+	return c
 }
 
-func NewConnection(conn string, config Config) *Connection {
-	connection := &Connection{
-		connection: conn,
-		config:     config,
+func NewConnection(driver, dsn string) *Connection {
+	return &Connection{
+		driver: driver,
+		dsn:    dsn,
 	}
-	connections := config.Connections
-	if config, exists := connections[conn]; exists {
-		connection.setGrammar(config.Driver)
-	}
-
-	Conns.Push(connection)
-	return connection
 }
 
 func init() {
