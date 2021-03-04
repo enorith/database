@@ -62,15 +62,8 @@ func (e *DBEvent) GetRawSql() string {
 			format string
 		)
 		switch v.(type) {
-		case int:
+		case int, int64, uint64:
 			format = "%d"
-			break
-		case int64:
-			format = "%d"
-			break
-		case uint64:
-			format = "%d"
-			break
 		case string:
 			format = "'%s'"
 			break

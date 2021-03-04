@@ -199,7 +199,7 @@ func (q *QueryBuilder) FromSub(builder *QueryBuilder, as string) (*QueryBuilder,
 		return nil, err
 	}
 
-	bindings :=  builder.FlatBindings()
+	bindings := builder.FlatBindings()
 
 	q.from = Raw(fmt.Sprintf("(%s) as %s", toSql, WrapValue(as)))
 	q.bindings = append(q.bindings, bindings...)
@@ -305,9 +305,9 @@ func (q *QueryBuilder) Create(attributes map[string]interface{}, key ...string) 
 		}
 	}
 
-	found, findErr := q.AndWhere(primary, "=", id).First()
+	found, findErr := NewBuilder(q.connection).From(q.from).AndWhere(primary, "=", id).First()
 	if findErr != nil {
-		return &CollectionItem{}, err
+		return &CollectionItem{}, findErr
 	}
 
 	return found, nil

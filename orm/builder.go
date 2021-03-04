@@ -316,18 +316,10 @@ func (b *Builder) marshalModel(t reflect.Type, v interface{}, item *database.Col
 				case reflect.String:
 					in, _ := item.GetString(input)
 					field.SetString(in)
-				case reflect.Int:
-					fallthrough
-				case reflect.Int32:
-					fallthrough
-				case reflect.Int64:
+				case reflect.Int, reflect.Int32, reflect.Int64:
 					in, _ := item.GetInt(input)
 					field.SetInt(in)
-				case reflect.Uint:
-					fallthrough
-				case reflect.Uint32:
-					fallthrough
-				case reflect.Uint64:
+				case reflect.Uint, reflect.Uint32, reflect.Uint64:
 					in, _ := item.GetUint(input)
 					field.SetUint(in)
 				}
