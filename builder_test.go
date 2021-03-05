@@ -37,6 +37,29 @@ func TestQueryBuilder_Create(t *testing.T) {
 	t.Logf("created item %v", item)
 }
 
+func TestQueryBuilder_Transaction(t *testing.T) {
+	e := builder.Transaction(func(builder *database.QueryBuilder) error {
+		_, e := builder.From("articles").Create(map[string]interface{}{
+			"title":   "none exists",
+			"content": "should not exists",
+		})
+		if e != nil {
+			return e
+		}
+		_, e = builder.From("articles").Create(map[string]interface{}{
+			"title":       "none exists 2",
+			"content":     "should not exists 2",
+			"error_field": "eee",
+		})
+
+		return e
+	})
+
+	if e != nil {
+		t.Logf("transaction failed %v", e)
+	}
+}
+
 func init() {
 	m = database.DefaultManager
 	m.Register(database.DefaultConnection, func() (*database.Connection, error) {
@@ -55,7 +78,7 @@ func init() {
 	for _, token := range tokens {
 		token = bytes.TrimSpace(token)
 		if len(token) > 0 {
-			_, err := c.Select(string(token))
+			_, err := c.Exec(string(token))
 			if err != nil {
 				log.Fatalf("migartion error %v", err)
 			}

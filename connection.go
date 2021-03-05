@@ -174,9 +174,15 @@ func (c *Connection) TransactionCall(handler func() error) error {
 			err = txErr
 		} else {
 			err = c.callTxHandler(handler)
-			tx.Commit()
+			ce := tx.Commit()
+			if ce != nil {
+				return ce
+			}
 			if err != nil {
-				tx.Rollback()
+				re := tx.Rollback()
+				if re != nil {
+					return re
+				}
 			}
 		}
 	}

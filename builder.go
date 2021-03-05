@@ -360,6 +360,12 @@ func (q *QueryBuilder) JoinWith(category, table string, handler JoinHandler) *Qu
 	return q
 }
 
+func (q *QueryBuilder) Transaction(handler func(builder *QueryBuilder) error) error {
+	return q.connection.TransactionCall(func() error {
+		return handler(q.NewQuery())
+	})
+}
+
 func (q *QueryBuilder) Take(limit int) *QueryBuilder {
 	q.limit = limit
 	return q
