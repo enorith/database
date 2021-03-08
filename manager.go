@@ -38,6 +38,10 @@ func (m *Manager) Register(name string, register ConnectionRegister) *Manager {
 	return m
 }
 
+func (m *Manager) RegisterDefault(register ConnectionRegister) *Manager {
+	return m.Register(DefaultConnection, register)
+}
+
 func (m *Manager) GetConnection(name ...string) (*Connection, error) {
 	var using string
 	if len(name) > 0 {
