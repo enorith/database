@@ -30,48 +30,28 @@ type Model struct {
 }
 
 func (m *Model) InitWith(v interface{}) error {
+	m.valid = true
+	m.v = v
+	b := new(Builder)
+
 	conn, err := guessConnection(v)
 	if err != nil {
 		return err
 	}
-	m.connection = conn
-	table, e := guessTableName(v)
-	if e != nil {
-		return e
-	}
-	m.table = table
 
-	key := guessKeyName(v)
-	m.keyName = key
-	m.valid = true
-	m.v = v
-
-	b := new(Builder)
 	if len(conn) < 1 {
 		conn = database.DefaultConnection
 	}
+
 	builder, be := database.DefaultManager.NewBuilder(conn)
 	if be != nil {
-		return err
+		return be
 	}
-
 	b.QueryBuilder = builder
-	b.From(table)
 	m.Builder = b
 	return nil
 }
 
-func (m *Model) Connection() string {
-	return m.connection
-}
-
-func (m *Model) Table() string {
-	return m.table
-}
-
-func (m *Model) KeyName() string {
-	return m.keyName
-}
 
 func NewModel(v interface{}) (*Model, error) {
 	m := &Model{}

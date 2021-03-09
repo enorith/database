@@ -246,7 +246,7 @@ func (b *Builder) Marshal(models interface{}) error {
 	return b.marshalModels(models, collection)
 }
 
-func (b *Builder) FindFor(id int64, model interface{}) error {
+func (b *Builder) FindFor(id interface{}, model interface{}) error {
 	table, e := guessTableName(model)
 	if e != nil {
 		return e
@@ -369,27 +369,31 @@ func guessTableName(v interface{}) (string, error) {
 		return table, nil
 	}
 
-	var it reflect.Type
-	switch t.Kind() {
-	case reflect.Slice:
-		it = t.Elem()
-	case reflect.Struct:
-		it = t
-	default:
-		return "", fmt.Errorf("unable guess table name from %v", t)
-	}
-	iv := reflect.New(it).Interface()
-	if tm, ok := iv.(WithTable); ok {
+	if tm, ok := v.(WithTable); ok {
 		table = tm.Table()
-	} else {
-		typeName := it.String()
-		ns := strings.Split(typeName, ".")
-		table = inflection.Plural(strings.ToLower(ns[len(ns)-1]))
+	} else  {
+		var it reflect.Type
+		switch t.Kind() {
+		case reflect.Slice:
+			it = t.Elem()
+		case reflect.Struct:
+			it = t
+		default:
+			return "", fmt.Errorf("unable guess table name from %v", t)
+		}
+		iv := reflect.New(it).Interface()
+		if tm, ok := iv.(WithTable); ok {
+			table = tm.Table()
+		} else {
+			typeName := it.String()
+			ns := strings.Split(typeName, ".")
+			table = inflection.Plural(strings.ToLower(ns[len(ns)-1]))
+		}
 	}
+
 	if table != "" {
 		tc.set(cacheKey, table)
 	}
-
 	return table, nil
 }
 
@@ -403,22 +407,26 @@ func guessConnection(v interface{}) (string, error) {
 	if table, ok := tc.get(cacheKey); ok {
 		return table, nil
 	}
-
-	var it reflect.Type
-	switch t.Kind() {
-	case reflect.Struct:
-		it = t
-	case reflect.Slice:
-		it = t.Elem()
-	default:
-		return "", fmt.Errorf("unable guess connection from %v", t)
-	}
-	iv := reflect.New(it).Interface()
-	if tm, ok := iv.(WithConnection); ok {
+	if tm, ok := v.(WithConnection); ok  {
 		conn = tm.Connection()
 	} else {
-		conn = ""
+		var it reflect.Type
+		switch t.Kind() {
+		case reflect.Struct:
+			it = t
+		case reflect.Slice:
+			it = t.Elem()
+		default:
+			return "", fmt.Errorf("unable guess connection from %v", t)
+		}
+		iv := reflect.New(it).Interface()
+		if tm, ok := iv.(WithConnection); ok {
+			conn = tm.Connection()
+		} else {
+			conn = ""
+		}
 	}
+
 	if conn != "" {
 		tc.set(cacheKey, conn)
 	}
