@@ -2,10 +2,12 @@ package database
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/enorith/cache"
 	jsoniter "github.com/json-iterator/go"
-	"sync"
 )
+
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 type ConnectionRegister func() (*Connection, error)
@@ -18,9 +20,9 @@ var DefaultManager *Manager
 
 type Manager struct {
 	connectionName string
-	registers 	   map[string]ConnectionRegister
+	registers      map[string]ConnectionRegister
 	connections    map[string]*Connection
-	m sync.RWMutex
+	m              sync.RWMutex
 }
 
 func (m *Manager) Using(name string) *Manager {
@@ -36,8 +38,11 @@ func (m *Manager) Register(name string, register ConnectionRegister) *Manager {
 	return m
 }
 
+func (m *Manager) RegisterDefault(register ConnectionRegister) *Manager {
+	return m.Register(DefaultConnection, register)
+}
 
-func (m *Manager) GetConnection(name ...string) (*Connection, error){
+func (m *Manager) GetConnection(name ...string) (*Connection, error) {
 	var using string
 	if len(name) > 0 {
 		using = name[0]
@@ -57,7 +62,7 @@ func (m *Manager) GetConnection(name ...string) (*Connection, error){
 		return c, nil
 	}
 	register, exists := m.registers[m.connectionName]
-	if  !exists {
+	if !exists {
 		return nil, fmt.Errorf("unregisterd connection [%s]", m.connectionName)
 	}
 	c, e := register()
@@ -85,7 +90,7 @@ func (m *Manager) CloseAll() error {
 
 func (m *Manager) NewBuilder(connectionName ...string) (*QueryBuilder, error) {
 	c, e := m.GetConnection(connectionName...)
-	if e !=nil {
+	if e != nil {
 		return nil, e
 	}
 
@@ -100,15 +105,26 @@ func (m *Manager) setConnection(name string, connection *Connection) {
 
 func WithDefaultDrivers() {
 	WithMysql()
+	WithSqlite()
 }
 
 func WithMysql() {
 	RegisterGrammar("mysql", &MysqlGrammar{})
 }
 
+func WithSqlite() {
+	RegisterGrammar("sqlite", &SqliteGrammar{})
+	RegisterGrammar("sqlite3", &SqliteGrammar{})
+}
+
+func NewManager() *Manager {
+	return &Manager{
+		registers:   make(map[string]ConnectionRegister),
+		connections: make(map[string]*Connection),
+		m:           sync.RWMutex{},
+	}
+}
+
 func init() {
-	DefaultManager = new(Manager)
-	DefaultManager.registers = make(map[string]ConnectionRegister)
-	DefaultManager.connections = make(map[string]*Connection)
-	DefaultManager.m = sync.RWMutex{}
+	DefaultManager = NewManager()
 }

@@ -62,15 +62,8 @@ func (e *DBEvent) GetRawSql() string {
 			format string
 		)
 		switch v.(type) {
-		case int:
+		case int, int64, uint64:
 			format = "%d"
-			break
-		case int64:
-			format = "%d"
-			break
-		case uint64:
-			format = "%d"
-			break
 		case string:
 			format = "'%s'"
 			break
@@ -181,9 +174,15 @@ func (c *Connection) TransactionCall(handler func() error) error {
 			err = txErr
 		} else {
 			err = c.callTxHandler(handler)
-			tx.Commit()
+			ce := tx.Commit()
+			if ce != nil {
+				return ce
+			}
 			if err != nil {
-				tx.Rollback()
+				re := tx.Rollback()
+				if re != nil {
+					return re
+				}
 			}
 		}
 	}

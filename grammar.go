@@ -243,6 +243,10 @@ type MysqlGrammar struct {
 	SqlGrammar
 }
 
+type SqliteGrammar struct {
+	SqlGrammar
+}
+
 func RegisterGrammar(name string, g Grammar) {
 	if grammars == nil {
 		grammars = make(map[string]Grammar)
