@@ -4,10 +4,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/enorith/supports/str"
 	"reflect"
 	"sort"
 	"strconv"
+
+	"github.com/enorith/supports/str"
 )
 
 type ItemHolder func(item *CollectionItem, index int)
@@ -189,9 +190,9 @@ func (c *Collection) UnmarshalFromCache(decoder func(value interface{}) bool) bo
 			result = append(result, NewCollectionItem(v))
 		}
 		c.items = result
+		c.loaded = true
 	}
 
-	c.loaded = true
 	return ok
 }
 
